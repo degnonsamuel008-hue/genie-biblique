@@ -1,0 +1,45 @@
+# ── Environnement virtuel ──
+env/
+venv/
+.venv/
+
+# ── Variables d'environnement (SECRETS) ──
+.env
+.env.local
+.env.production
+
+# ── Django ──
+*.pyc
+__pycache__/
+*.py[cod]
+db.sqlite3
+db.sqlite3-journal
+/media/
+/staticfiles/
+*.log
+
+# ── Migrations générées localement (optionnel : décommente si tu veux les exclure) ──
+# */migrations/*.py
+# !*/migrations/__init__.py
+
+# ── IDE / Éditeurs ──
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── OS ──
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Fichiers de config locale ──
+local_settings.py
+
+# ── Tests / couverture ──
+.coverage
+htmlcov/
+.pytest_cache/
+
+# ── Node (si tu utilises npm pour du CSS/JS) ──
+node_modules/

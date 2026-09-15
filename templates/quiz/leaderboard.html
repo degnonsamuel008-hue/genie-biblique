@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Classement — Génie Biblique{% endblock %}
+{% block nav_scores %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container text-center">
+    <h1><i class="bi bi-trophy-fill me-2 text-warning"></i>Classement général</h1>
+    <p>Les meilleurs joueurs de la communauté</p>
+  </div>
+</div>
+
+<div class="container pb-5">
+  <div class="row g-4">
+
+    <!-- ── Top scores ── -->
+    <div class="col-lg-7">
+      <div class="card p-4">
+        <h5 class="fw-bold mb-4">
+          <i class="bi bi-list-ol me-2 text-bleu"></i>Meilleurs scores
+        </h5>
+
+        {% if top_scores %}
+        {% for s in top_scores %}
+        <div class="d-flex align-items-center gap-3 p-3 mb-2 rounded-xl
+          {% if forloop.counter == 1 %}bg-warning bg-opacity-10{% elif forloop.counter == 2 %}bg-light{% elif forloop.counter == 3 %}bg-light{% else %}bg-white border{% endif %}">
+
+          <!-- Rang -->
+          <div style="width:36px;text-align:center;font-weight:800;font-size:1.1rem;">
+            {% if forloop.counter == 1 %}🥇
+            {% elif forloop.counter == 2 %}🥈
+            {% elif forloop.counter == 3 %}🥉
+            {% else %}<span class="text-muted">{{ forloop.counter }}</span>
+            {% endif %}
+          </div>
+
+          <!-- Nom -->
+          <div class="flex-grow-1">
+            <span class="fw-bold">{{ s.user.username|default:"Anonyme" }}</span>
+            <span class="badge ms-2
+              {% if s.difficulty == 'facile' %}bg-success
+              {% elif s.difficulty == 'moyen' %}bg-warning text-dark
+              {% elif s.difficulty == 'difficile' %}bg-danger
+              {% else %}bg-dark{% endif %}">
+              {{ s.difficulty }}
+            </span>
+          </div>
+
+          <!-- Score -->
+          <div class="text-end">
+            <div class="fw-bold text-bleu fs-5">{{ s.score }}/{{ s.total }}</div>
+            <div class="text-muted small">{{ s.percentage }}%</div>
+          </div>
+
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="text-center py-5 text-muted">
+          <div style="font-size:3rem;">🏆</div>
+          <p class="mt-2">Aucun score pour l'instant. Sois le premier !</p>
+          <a href="{% url 'start' %}" class="btn btn-primary rounded-xl">Jouer maintenant</a>
+        </div>
+        {% endif %}
+
+      </div>
+    </div>
+
+    <!-- ── Top joueurs par XP ── -->
+    <div class="col-lg-5">
+      <div class="card p-4 mb-4">
+        <h5 class="fw-bold mb-4">
+          <i class="bi bi-star-fill text-warning me-2"></i>Top joueurs (XP)
+        </h5>
+        {% for profile in top_users %}
+        <div class="d-flex align-items-center gap-3 mb-3">
+          <div style="font-size:1.4rem;">
+            {% if forloop.counter == 1 %}🥇{% elif forloop.counter == 2 %}🥈{% elif forloop.counter == 3 %}🥉{% else %}{{ forloop.counter }}{% endif %}
+          </div>
+          <div class="flex-grow-1">
+            <div class="fw-bold">{{ profile.user.username }}</div>
+            <div class="text-muted small">{{ profile.level }}</div>
+          </div>
+          <div class="fw-bold text-or">{{ profile.total_xp }} XP</div>
+        </div>
+        {% empty %}
+        <p class="text-muted">Pas encore de données.</p>
+        {% endfor %}
+      </div>
+
+      <!-- CTA -->
+      <div class="card p-4 text-center"
+           style="background:linear-gradient(135deg,#1a2744,#1e3a8a);color:#fff;">
+        <div style="font-size:2.5rem;">🎯</div>
+        <h5 class="fw-bold mt-2">Tu veux figurer ici ?</h5>
+        <p class="opacity-75 small">Joue et accumule des XP pour grimper dans le classement !</p>
+        <a href="{% url 'start' %}" class="btn btn-or rounded-xl">
+          <i class="bi bi-play-fill me-1"></i>Jouer maintenant
+        </a>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

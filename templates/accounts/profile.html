@@ -1,0 +1,562 @@
+{% extends "base.html" %}
+{% block title %}Mon Profil — {{ user.username }}{% endblock %}
+{% block nav_profile %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ── Photo / Avatar ── */
+  .profile-avatar-wrap {
+    width: 110px; height: 110px; border-radius: 50%;
+    background: #fff; border: 4px solid rgba(255,255,255,.4);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 3.5rem; box-shadow: 0 8px 32px rgba(0,0,0,.25);
+    overflow: hidden; position: relative;
+    cursor: pointer; transition: transform .2s;
+  }
+  .profile-avatar-wrap:hover { transform: scale(1.05); }
+  .profile-avatar-wrap img {
+    width: 100%; height: 100%; object-fit: cover; border-radius: 50%;
+  }
+  .avatar-edit-badge {
+    position: absolute; bottom: 0; right: 0;
+    background: var(--or); color: #fff;
+    width: 30px; height: 30px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .8rem; border: 2px solid #fff;
+  }
+
+  /* ── Sélecteur d'avatar ── */
+  .avatar-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+  }
+  .avatar-option {
+    border: 2.5px solid #e2e8f0; border-radius: 12px;
+    padding: 10px 6px; text-align: center;
+    cursor: pointer; transition: all .15s; background: #fff;
+  }
+  .avatar-option:hover  { border-color: var(--bleu-vif); background: #eff6ff; }
+  .avatar-option.active { border-color: var(--bleu-vif); background: #dbeafe; }
+  .avatar-option input  { display: none; }
+  .avatar-option .emoji { font-size: 1.6rem; display: block; }
+  .avatar-option .label { font-size: .7rem; color: #64748b; margin-top: 2px; }
+
+  /* ── Onglets de la section modifier ── */
+  .tab-pills .nav-link {
+    border-radius: 10px; font-weight: 600; color: #64748b;
+    padding: 8px 16px; border: 2px solid transparent;
+  }
+  .tab-pills .nav-link.active {
+    background: var(--bleu-nuit); color: #fff; border-color: var(--bleu-nuit);
+  }
+
+  /* ── XP bar ── */
+  .xp-bar { height: 14px; border-radius: 8px; background: #e2e8f0; overflow: hidden; }
+  .xp-fill {
+    height: 100%; border-radius: 8px;
+    background: linear-gradient(90deg, #f59e0b, #ef4444);
+    transition: width 1s ease;
+  }
+
+  /* ── Stat card ── */
+  .stat-card {
+    background: #f8fafc; border-radius: 14px;
+    padding: 16px; text-align: center; border: 2px solid #e2e8f0;
+    transition: all .2s;
+  }
+  .stat-card:hover { border-color: var(--bleu-vif); background: #eff6ff; }
+  .stat-card .val  { font-size: 1.8rem; font-weight: 800; }
+  .stat-card .lbl  { font-size: .75rem; color: #94a3b8; margin-top: 2px; }
+
+  /* ── Badge card ── */
+  .badge-card {
+    border-radius: 12px; padding: 14px 10px;
+    text-align: center; border: 2px solid #e2e8f0;
+    transition: all .2s; background: #fff;
+  }
+  .badge-card:hover { transform: translateY(-3px); box-shadow: 0 6px 16px rgba(0,0,0,.1); }
+  .badge-card.locked { opacity: .45; filter: grayscale(.8); }
+  .badge-card .b-icon { font-size: 2rem; }
+  .badge-card .b-name { font-size: .8rem; font-weight: 700; margin-top: 4px; }
+  .badge-card .b-desc { font-size: .7rem; color: #94a3b8; }
+
+  /* ── Score table ── */
+  .score-row { border-radius: 10px; transition: background .15s; }
+  .score-row:hover { background: #f1f5f9; }
+
+  /* ── Section header ── */
+  .section-title {
+    font-weight: 800; font-size: 1rem; color: var(--bleu-nuit);
+    display: flex; align-items: center; gap: 8px; margin-bottom: 16px;
+  }
+  .section-title .icon-wrap {
+    width: 32px; height: 32px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .9rem;
+  }
+
+  /* ── Upload photo ── */
+  .photo-drop {
+    border: 2.5px dashed #cbd5e1; border-radius: 14px;
+    padding: 28px; text-align: center; cursor: pointer;
+    transition: all .2s; background: #f8fafc;
+  }
+  .photo-drop:hover, .photo-drop.dragover {
+    border-color: var(--bleu-vif); background: #eff6ff;
+  }
+  .photo-preview {
+    width: 100px; height: 100px; border-radius: 50%;
+    object-fit: cover; border: 3px solid var(--bleu-vif);
+    display: none; margin: 0 auto 12px;
+  }
+
+  /* ── Password strength ── */
+  .pwd-strength { height: 4px; border-radius: 4px; margin-top: 6px; transition: all .3s; }
+  .pwd-weak   { background: #dc2626; width: 33%; }
+  .pwd-medium { background: #f59e0b; width: 66%; }
+  .pwd-strong { background: #16a34a; width: 100%; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ═══════════════════  EN-TÊTE PROFIL  ═══════════════════ -->
+<div style="background:linear-gradient(135deg,#1a2744 0%,#1e3a8a 60%,#1e40af 100%);
+            padding: 48px 0 80px; position:relative; overflow:hidden;">
+  <!-- Déco background -->
+  <div style="position:absolute;top:-40px;right:-40px;width:200px;height:200px;
+              border-radius:50%;background:rgba(255,255,255,.04);"></div>
+  <div style="position:absolute;bottom:-60px;left:-20px;width:160px;height:160px;
+              border-radius:50%;background:rgba(255,255,255,.03);"></div>
+
+  <div class="container text-center" style="position:relative;">
+
+    <!-- Photo / Avatar -->
+    <div class="mb-3" onclick="document.getElementById('tab-photo-btn').click()"
+         title="Modifier la photo">
+      <div class="profile-avatar-wrap d-inline-flex">
+        {% with dp=profile.display_photo %}
+          {% if dp.type == 'photo' %}
+            <img src="{{ dp.url }}" alt="Photo de profil">
+          {% else %}
+            {{ dp.emoji }}
+          {% endif %}
+        {% endwith %}
+        <div class="avatar-edit-badge">
+          <i class="bi bi-camera-fill"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nom + niveau -->
+    <h1 class="fw-bold text-white mb-1">{{ user.username }}</h1>
+    <div class="d-flex justify-content-center align-items-center gap-2 mb-3">
+      <span class="niveau-badge fs-6">{{ profile.level }}</span>
+      <span class="text-white opacity-75">·</span>
+      <span class="text-white opacity-75">
+        <i class="bi bi-fire text-warning"></i>
+        {{ profile.streak_days }} jour{{ profile.streak_days|pluralize }} de suite
+      </span>
+    </div>
+
+    <!-- XP bar -->
+    <div style="max-width:300px;margin:0 auto;">
+      <div class="d-flex justify-content-between text-white opacity-60 mb-1"
+           style="font-size:.75rem;">
+        <span>{{ profile.total_xp }} XP</span>
+        <span>{{ profile.xp_progress_percent }}% vers le prochain niveau</span>
+      </div>
+      <div class="xp-bar">
+        <div class="xp-fill" style="width:{{ profile.xp_progress_percent }}%"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════  CONTENU  ═══════════════════ -->
+<div class="container pb-5" style="margin-top:-40px;">
+  <div class="row g-4">
+
+    <!-- ══════════  COLONNE GAUCHE  ══════════ -->
+    <div class="col-lg-4">
+
+      <!-- Stats -->
+      <div class="card p-4 mb-4">
+        <div class="section-title">
+          <div class="icon-wrap" style="background:#dbeafe;">📊</div>
+          Mes statistiques
+        </div>
+        <div class="row g-2">
+          <div class="col-6">
+            <div class="stat-card">
+              <div class="val text-bleu">{{ profile.total_questions_answered }}</div>
+              <div class="lbl">Questions jouées</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="stat-card">
+              <div class="val text-success">{{ profile.accuracy_rate }}%</div>
+              <div class="lbl">Précision</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="stat-card">
+              <div class="val text-warning">{{ profile.streak_days }}🔥</div>
+              <div class="lbl">Streak</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="stat-card">
+              <div class="val text-or">{{ profile.total_xp }}</div>
+              <div class="lbl">XP total</div>
+            </div>
+          </div>
+          <div class="col-12">
+            <div class="stat-card">
+              <div class="val text-bleu" style="font-size:1.2rem;">
+                {{ profile.total_correct }} / {{ profile.total_questions_answered }}
+              </div>
+              <div class="lbl">Bonnes réponses</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modifier le profil -->
+      <div class="card p-4">
+        <div class="section-title">
+          <div class="icon-wrap" style="background:#fef3c7;">✏️</div>
+          Modifier mon profil
+        </div>
+
+        <!-- Onglets -->
+        <ul class="nav tab-pills gap-1 mb-3" id="editTabs">
+          <li class="nav-item">
+            <button class="nav-link active" data-bs-toggle="pill"
+                    data-bs-target="#tab-photo" id="tab-photo-btn">
+              <i class="bi bi-person-circle me-1"></i>Photo
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="pill"
+                    data-bs-target="#tab-bio">
+              <i class="bi bi-pencil me-1"></i>Bio
+            </button>
+          </li>
+          
+        </ul>
+
+        <div class="tab-content">
+
+          <!-- ── Onglet Photo / Avatar ── -->
+          <div class="tab-pane fade show active" id="tab-photo">
+            <form method="POST" enctype="multipart/form-data" action="{% url 'profile' %}">
+              {% csrf_token %}
+              <input type="hidden" name="section" value="photo">
+
+              <!-- Choix : avatar ou photo -->
+              <div class="d-flex gap-2 mb-3">
+                <input type="radio" class="btn-check" name="photo_type"
+                       id="type-avatar" value="avatar"
+                       {% if profile.photo_type == 'avatar' %}checked{% endif %}
+                       onchange="togglePhotoSection()">
+                <label class="btn btn-outline-primary rounded-xl flex-fill" for="type-avatar">
+                  <i class="bi bi-emoji-smile me-1"></i>Avatar
+                </label>
+
+                <input type="radio" class="btn-check" name="photo_type"
+                       id="type-photo" value="photo"
+                       {% if profile.photo_type == 'photo' %}checked{% endif %}
+                       onchange="togglePhotoSection()">
+                <label class="btn btn-outline-primary rounded-xl flex-fill" for="type-photo">
+                  <i class="bi bi-camera me-1"></i>Ma photo
+                </label>
+              </div>
+
+              <!-- Section Avatars -->
+              <div id="section-avatar"
+                   {% if profile.photo_type == 'photo' %}style="display:none"{% endif %}>
+                <p class="text-muted small mb-2">Choisis ton avatar :</p>
+                <div class="avatar-grid">
+                  {% for key, emoji, label in avatars %}
+                  <label class="avatar-option {% if profile.avatar == key %}active{% endif %}"
+                         onclick="selectAvatar(this)">
+                    <input type="radio" name="avatar" value="{{ key }}"
+                           {% if profile.avatar == key %}
+                              checked
+                            {% endif %}>
+                    <span class="emoji">{{ emoji }}</span>
+                    <span class="label">{{ label }}</span>
+                  </label>
+                  {% endfor %}
+                </div>
+              </div>
+
+              <!-- Section Photo personnelle -->
+              
+
+              <button type="submit" class="btn btn-primary w-100 rounded-xl mt-3">
+                <i class="bi bi-check-circle me-1"></i>Sauvegarder
+              </button>
+            </form>
+          </div>
+
+          <!-- ── Onglet Bio ── -->
+          <div class="tab-pane fade" id="tab-bio">
+            <form method="POST" action="{% url 'profile' %}">
+              {% csrf_token %}
+              <input type="hidden" name="section" value="bio">
+              <div class="mb-3">
+                <label class="form-label fw-semibold">
+                  <i class="bi bi-person me-1 text-bleu"></i>Bio
+                </label>
+                <textarea name="bio" class="form-control rounded-xl" rows="4"
+                          placeholder="Parle de toi, de ta passion pour la Bible...">{{ profile.bio }}</textarea>
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-semibold">
+                  <i class="bi bi-envelope me-1 text-bleu"></i>Email
+                </label>
+                <input type="email" name="email" class="form-control rounded-xl"
+                       value="{{ user.email }}" placeholder="ton@email.com">
+                <div class="form-text">Utilisé pour la réinitialisation du mot de passe.</div>
+              </div>
+              <button type="submit" class="btn btn-primary w-100 rounded-xl">
+                <i class="bi bi-check-circle me-1"></i>Sauvegarder
+              </button>
+            </form>
+          </div>
+
+       
+        </div><!-- /tab-content -->
+      </div><!-- /card modifier -->
+
+    </div><!-- /col gauche -->
+
+    <!-- ══════════  COLONNE DROITE  ══════════ -->
+    <div class="col-lg-8">
+
+      <!-- Badges débloqués -->
+       <div class="col-lg-8" data-aos="fade-up" data-aos-delay="200"></div>
+      <div class="card p-4 mb-4">
+        <div class="section-title">
+          <div class="icon-wrap" style="background:#fef3c7;">🏅</div>
+          Mes badges ({{ user_badges|length }})
+        </div>
+
+        {% if user_badges %}
+        <div class="row g-3 mb-2">
+          {% for ub in user_badges %}
+          <div class="col-6 col-md-4 col-lg-3">
+            <div class="badge-card" title="{{ ub.badge.description }}">
+              <div class="b-icon">{{ ub.badge.icon }}</div>
+              <div class="b-name">{{ ub.badge.name }}</div>
+              <div class="b-desc">{{ ub.badge.description }}</div>
+              <div class="mt-1" style="font-size:.65rem;color:#f59e0b;">
+                +{{ ub.badge.xp_reward }} XP
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-4 text-muted">
+          <div style="font-size:2.5rem;">🏅</div>
+          <p class="mt-2 mb-3">Joue pour débloquer tes premiers badges !</p>
+          <a href="{% url 'start' %}" class="btn btn-primary rounded-xl">
+            <i class="bi bi-play-fill me-1"></i>S'entraîner maintenant
+          </a>
+        </div>
+        {% endif %}
+
+        <!-- Badges verrouillés -->
+        {% if all_badges %}
+        <details class="mt-2">
+          <summary class="text-muted small fw-semibold" style="cursor:pointer;">
+            <i class="bi bi-lock me-1"></i>
+            Badges à débloquer ({{ all_badges|length|add:"-"|add:user_badges|length }})
+          </summary>
+          <div class="row g-2 mt-2">
+            {% for badge in all_badges %}
+            {% if badge.id not in earned_ids %}
+            <div class="col-6 col-md-4 col-lg-3">
+              <div class="badge-card locked">
+                <div class="b-icon">{{ badge.icon }}</div>
+                <div class="b-name">{{ badge.name }}</div>
+                <div class="b-desc">{{ badge.description }}</div>
+              </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+          </div>
+        </details>
+        {% endif %}
+
+      </div>
+
+      <!-- Historique des parties -->
+      <div class="card p-4">
+        <div class="section-title">
+          <div class="icon-wrap" style="background:#dcfce7;">📋</div>
+          Historique des parties
+        </div>
+
+        {% if recent_scores %}
+        <div class="table-responsive">
+          <table class="table align-middle mb-0" style="border-collapse:separate;border-spacing:0 4px;">
+            <thead>
+              <tr style="font-size:.8rem;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;">
+                <th class="border-0 ps-2">Date</th>
+                <th class="border-0">Score</th>
+                <th class="border-0">Difficulté</th>
+                <th class="border-0">XP</th>
+                <th class="border-0">Résultat</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for s in recent_scores %}
+              <tr class="score-row">
+                <td class="text-muted small ps-2" style="border:none;">
+                  {{ s.created_at|date:"d/m/Y" }}<br>
+                  <span style="font-size:.7rem;">{{ s.created_at|date:"H:i" }}</span>
+                </td>
+                <td style="border:none;">
+                  <span class="fw-bold
+                    {% if s.percentage >= 70 %}text-success
+                    {% elif s.percentage >= 40 %}text-warning
+                    {% else %}text-danger{% endif %}">
+                    {{ s.score }}/{{ s.total }}
+                  </span>
+                  <span class="text-muted small d-block">{{ s.percentage }}%</span>
+                </td>
+                <td style="border:none;">
+                  {% if s.difficulty == 'facile' %}
+                    <span class="badge rounded-pill bg-success">🌱 Facile</span>
+                  {% elif s.difficulty == 'moyen' %}
+                    <span class="badge rounded-pill bg-warning text-dark">📖 Moyen</span>
+                  {% elif s.difficulty == 'difficile' %}
+                    <span class="badge rounded-pill bg-danger">🔥 Difficile</span>
+                  {% else %}
+                    <span class="badge rounded-pill bg-dark">💎 Expert</span>
+                  {% endif %}
+                </td>
+                <td style="border:none;">
+                  <span class="fw-bold text-or">+{{ s.xp_earned }}</span>
+                  <span class="text-muted small">XP</span>
+                </td>
+                <td style="border:none;">
+                  {% if s.percentage == 100 %}
+                    <span class="badge bg-warning text-dark">🏆 Parfait</span>
+                  {% elif s.percentage >= 70 %}
+                    <span class="badge bg-success">✅ Réussi</span>
+                  {% elif s.percentage >= 40 %}
+                    <span class="badge bg-warning text-dark">😐 Moyen</span>
+                  {% else %}
+                    <span class="badge bg-danger">❌ Raté</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4 text-muted">
+          <div style="font-size:2.5rem;">📊</div>
+          <p class="mt-2">Aucune partie jouée pour l'instant.</p>
+          <a href="{% url 'start' %}" class="btn btn-primary rounded-xl">
+            Commencer à jouer
+          </a>
+        </div>
+        {% endif %}
+
+      </div>
+
+    </div><!-- /col droite -->
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+
+<script>
+  // ── Basculer entre avatar et photo ──────────────────────────────────────
+  function togglePhotoSection() {
+    const isPhoto = document.getElementById('type-photo').checked;
+    document.getElementById('section-avatar').style.display = isPhoto ? 'none' : 'block';
+    document.getElementById('section-photo').style.display  = isPhoto ? 'block' : 'none';
+  }
+
+  // ── Sélectionner un avatar ───────────────────────────────────────────────
+  function selectAvatar(el) {
+    document.querySelectorAll('.avatar-option').forEach(o => o.classList.remove('active'));
+    el.classList.add('active');
+    el.querySelector('input').checked = true;
+  }
+
+  // ── Prévisualisation de la photo uploadée ────────────────────────────────
+  function previewPhoto(input) {
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const preview = document.getElementById('photo-preview-new');
+        const content = document.getElementById('drop-content');
+        preview.src   = e.target.result;
+        preview.style.display = 'block';
+        content.style.display = 'none';
+      };
+      reader.readAsDataURL(input.files[0]);
+    }
+  }
+
+  // ── Drag & Drop ──────────────────────────────────────────────────────────
+  function dragOver(e) {
+    e.preventDefault();
+    document.getElementById('photo-drop').classList.add('dragover');
+  }
+  function dragLeave(e) {
+    document.getElementById('photo-drop').classList.remove('dragover');
+  }
+  function dropFile(e) {
+    e.preventDefault();
+    document.getElementById('photo-drop').classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      const input  = document.getElementById('photo-input');
+      const dt     = new DataTransfer();
+      dt.items.add(file);
+      input.files  = dt.files;
+      previewPhoto(input);
+    }
+  }
+
+  // ── Force du mot de passe ────────────────────────────────────────────────
+  function checkStrength(pwd) {
+    const bar  = document.getElementById('pwd-bar');
+    const text = document.getElementById('pwd-text');
+    if (pwd.length < 6) {
+      bar.className  = 'pwd-strength pwd-weak';
+      text.textContent = '⚠️ Trop court';
+      text.className = 'form-text text-danger';
+    } else if (pwd.length < 10 || !/[0-9]/.test(pwd) || !/[A-Z]/.test(pwd)) {
+      bar.className  = 'pwd-strength pwd-medium';
+      text.textContent = '👍 Moyen — ajoute des chiffres et majuscules';
+      text.className = 'form-text text-warning';
+    } else {
+      bar.className  = 'pwd-strength pwd-strong';
+      text.textContent = '✅ Mot de passe fort';
+      text.className = 'form-text text-success';
+    }
+  }
+
+  // ── Animation XP bar au chargement ──────────────────────────────────────
+  window.addEventListener('load', () => {
+    const fill = document.querySelector('.xp-fill');
+    if (fill) {
+      const target = fill.style.width;
+      fill.style.width = '0%';
+      setTimeout(() => { fill.style.width = target; }, 200);
+    }
+  });
+</script>
+{% endblock %}

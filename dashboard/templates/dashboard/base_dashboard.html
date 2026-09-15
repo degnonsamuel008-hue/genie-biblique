@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Tableau de bord{% endblock %} — Admin Génie Biblique</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <style>
+    :root {
+      --bleu-nuit: #0f172a;
+      --bleu-side: #1e293b;
+      --bleu-vif:  #2563eb;
+      --or:        #f59e0b;
+      --vert:      #16a34a;
+      --rouge:     #dc2626;
+    }
+    body {
+      background: #f1f5f9;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 250px;
+      background: var(--bleu-side);
+      color: #fff;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      overflow-y: auto;
+      padding: 20px 0;
+      z-index: 100;
+    }
+    .sidebar-brand {
+      padding: 0 20px 20px;
+      font-weight: 800;
+      font-size: 1.2rem;
+      border-bottom: 1px solid rgba(255,255,255,.1);
+      margin-bottom: 16px;
+    }
+    .sidebar-brand span { color: var(--or); }
+    .sidebar-link {
+      display: flex; align-items: center; gap: 12px;
+      padding: 11px 20px;
+      color: rgba(255,255,255,.7);
+      text-decoration: none;
+      font-size: .92rem;
+      transition: all .15s;
+      border-left: 3px solid transparent;
+    }
+    .sidebar-link:hover { background: rgba(255,255,255,.05); color:#fff; }
+    .sidebar-link.active {
+      background: rgba(37,99,235,.15);
+      color: #fff;
+      border-left-color: var(--bleu-vif);
+    }
+    .sidebar-section {
+      padding: 16px 20px 6px;
+      font-size: .7rem;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: rgba(255,255,255,.4);
+    }
+
+    /* ── Main content ── */
+    .main-content { margin-left: 250px; flex: 1; padding: 24px 32px; }
+
+    .topbar {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 24px;
+    }
+    .topbar h1 { font-size: 1.5rem; font-weight: 800; color: var(--bleu-nuit); margin: 0; }
+
+    /* ── Cards stats ── */
+    .stat-card {
+      background: #fff; border-radius: 14px; padding: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.06);
+      border: 1px solid #e2e8f0;
+    }
+    .stat-icon {
+      width: 44px; height: 44px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem; margin-bottom: 10px;
+    }
+    .stat-value { font-size: 1.7rem; font-weight: 800; color: var(--bleu-nuit); }
+    .stat-label { font-size: .8rem; color: #94a3b8; }
+    .stat-trend { font-size: .75rem; font-weight: 600; }
+
+    .chart-card {
+      background: #fff; border-radius: 14px; padding: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.06);
+      border: 1px solid #e2e8f0;
+    }
+
+    .table-modern th {
+      font-size: .72rem; text-transform: uppercase; letter-spacing: .4px;
+      color: #94a3b8; border-bottom: 2px solid #e2e8f0; font-weight: 700;
+    }
+    .table-modern td { vertical-align: middle; font-size: .88rem; }
+
+    .badge-status { font-size: .72rem; padding: 4px 10px; border-radius: 20px; font-weight: 600; }
+
+    @media (max-width: 900px) {
+      .sidebar { transform: translateX(-100%); transition: transform .3s; }
+      .sidebar.show { transform: translateX(0); }
+      .main-content { margin-left: 0; padding: 16px; }
+    }
+  </style>
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<!-- ═══ SIDEBAR ═══ -->
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-brand">✝ <span>Admin</span> Panel</div>
+
+  <div class="sidebar-section">Vue d'ensemble</div>
+  <a href="{% url 'dashboard_home' %}" class="sidebar-link {% block nav_home %}{% endblock %}">
+    <i class="bi bi-speedometer2"></i> Tableau de bord
+  </a>
+
+  <div class="sidebar-section">Gestion</div>
+  <a href="{% url 'dashboard_users' %}" class="sidebar-link {% block nav_users %}{% endblock %}">
+    <i class="bi bi-people"></i> Utilisateurs
+  </a>
+  <a href="{% url 'dashboard_questions' %}" class="sidebar-link {% block nav_questions %}{% endblock %}">
+    <i class="bi bi-question-circle"></i> Questions
+  </a>
+  <a href="{% url 'dashboard_games' %}" class="sidebar-link {% block nav_games %}{% endblock %}">
+    <i class="bi bi-controller"></i> Parties
+  </a>
+
+  <div class="sidebar-section">Autres</div>
+  <a href="/admin/" class="sidebar-link">
+    <i class="bi bi-gear"></i> Django Admin
+  </a>
+  <a href="{% url 'home' %}" class="sidebar-link">
+    <i class="bi bi-box-arrow-left"></i> Retour au site
+  </a>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main-content">
+
+  {% if messages %}
+  {% for m in messages %}
+  <div class="alert alert-{{ m.tags }} alert-dismissible fade show rounded-3">
+    {{ m }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  {% block content %}{% endblock %}
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

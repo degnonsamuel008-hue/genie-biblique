@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}Créer une partie — Génie Biblique{% endblock %}
+{% block nav_game %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container text-center">
+    <h1><i class="bi bi-plus-circle me-2"></i>Créer une partie</h1>
+    <p>Configure les paramètres de ton génie biblique</p>
+  </div>
+</div>
+
+<div class="container pb-5">
+  <div class="row justify-content-center">
+    <div class="col-md-7">
+      <div class="card p-4 p-md-5">
+
+        <form method="POST" action="{% url 'create_game' %}">
+          {% csrf_token %}
+
+          <!-- Livre -->
+          <div class="mb-4">
+            <label class="form-label fw-bold">
+              <i class="bi bi-book me-1 text-bleu"></i>Livre biblique
+            </label>
+                    <div class="d-flex align-items-center gap-3">
+                        <div id="book-3d" style="width:120px;height:80px;position:relative;">
+                          <div class="threejs-fallback" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#334155;font-weight:600;font-size:.85rem;">Rendu 3D indisponible</div>
+                        </div>
+              <select name="book" class="form-select form-select-lg rounded-xl">
+                <option value="">📚 Tous les livres</option>
+                {% for book in books %}
+                <option value="{{ book.name }}">{{ book.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+         
+
+          <!-- Nombre de questions -->
+          <div class="mb-4">
+            <label class="form-label fw-bold">
+              <i class="bi bi-hash me-1 text-bleu"></i>Nombre de questions :
+              <span id="qcount" class="text-bleu">10</span>
+            </label>
+            <input type="range" name="count" class="form-range"
+                   min="5" max="20" step="5" value="10"
+                   oninput="document.getElementById('qcount').textContent=this.value">
+            <div class="d-flex justify-content-between text-muted small">
+              <span>5</span><span>10</span><span>15</span><span>20</span>
+            </div>
+          </div>
+
+          <!-- Temps par question -->
+          <div class="mb-4">
+            <label class="form-label fw-bold">
+              <i class="bi bi-stopwatch me-1 text-danger"></i>Temps par question :
+              <span id="tcount" class="text-danger">15</span>s
+            </label>
+            <input type="range" name="time" class="form-range"
+                   min="10" max="30" step="5" value="15"
+                   oninput="document.getElementById('tcount').textContent=this.value">
+            <div class="d-flex justify-content-between text-muted small">
+              <span>10s</span><span>15s</span><span>20s</span><span>25s</span><span>30s</span>
+            </div>
+            <!-- Avertissement anti-IA -->
+            <div class="alert mt-2 rounded-xl p-2"
+                 style="background:#fef3c7;border-left:4px solid #f59e0b;font-size:.85rem;">
+              <i class="bi bi-shield-check me-1 text-warning"></i>
+              <strong>Anti-IA :</strong> un timer court empêche l'utilisation de l'intelligence artificielle.
+              15 secondes recommandées.
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-or btn-lg w-100 rounded-xl">
+            <i class="bi bi-play-circle me-2"></i>Créer la partie
+          </button>
+        </form>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r152/three.min.js"></script>
+<script>
+  (function(){
+    const container = document.getElementById('book-3d');
+    console.log('ThreeJS (book) - window.THREE =', !!window.THREE, 'containerExists=', !!container);
+    if (!container) return;
+    console.log('book-3d size', container.clientWidth, 'x', container.clientHeight);
+    try {
+      if (!window.THREE) throw new Error('Three.js non chargé');
+      const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(50, container.clientWidth/container.clientHeight, 0.1, 1000);
+    camera.position.z = 6;
+    const renderer = new THREE.WebGLRenderer({ alpha:true, antialias:true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+      container.appendChild(renderer.domElement);
+      const fb = container.querySelector('.threejs-fallback'); if (fb) fb.style.display = 'none';
+
+    const light = new THREE.DirectionalLight(0xffffff, 0.8);
+    light.position.set(5,5,5); scene.add(light);
+    scene.add(new THREE.AmbientLight(0xffffff,0.4));
+
+    // Créer une 'book' cube avec un '?' en texture
+    const canvas = document.createElement('canvas'); canvas.width=256; canvas.height=256;
+    const ctx = canvas.getContext('2d'); ctx.fillStyle='#2563eb'; ctx.fillRect(0,0,256,256);
+    ctx.fillStyle='white'; ctx.font='bold 160px Arial'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('?',128,128);
+    const tex = new THREE.CanvasTexture(canvas);
+
+    const geo = new THREE.BoxGeometry(2.2,1.4,0.4);
+    const mat = new THREE.MeshStandardMaterial({ map: tex });
+    const mesh = new THREE.Mesh(geo, mat);
+    scene.add(mesh);
+
+    function animate(){
+      mesh.rotation.y += 0.02;
+      mesh.rotation.x = Math.sin(Date.now()*0.001)*0.08;
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    }
+    animate();
+    } catch (err) {
+      console.error('ThreeJS (book) init error:', err);
+    }
+    window.addEventListener('resize', ()=>{ renderer.setSize(container.clientWidth, container.clientHeight); camera.aspect = container.clientWidth/container.clientHeight; camera.updateProjectionMatrix(); });
+  })();
+</script>
+{% endblock %}

@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}Résultat — Génie Biblique{% endblock %}
+
+{% block content %}
+<div class="container py-5" style="max-width:750px;">
+
+  <!-- Carte résultat principal -->
+  <div class="card p-5 text-center mb-4"
+       style="background:linear-gradient(135deg,#1a2744,#1e3a8a);color:#fff;">
+
+    <!-- Emoji selon le score -->
+    <div style="font-size:4rem;margin-bottom:8px;">
+      {% if percentage >= 80 %}🏆
+      {% elif percentage >= 60 %}😊
+      {% elif percentage >= 40 %}😐
+      {% else %}😔{% endif %}
+    </div>
+
+    <h2 class="fw-bold">
+      {% if percentage >= 80 %}Excellent !
+      {% elif percentage >= 60 %}Bien joué !
+      {% elif percentage >= 40 %}Pas mal !
+      {% else %}Courage !{% endif %}
+    </h2>
+
+    <!-- Score -->
+    <div class="my-3">
+      <span style="font-size:3.5rem;font-weight:800;color:#f59e0b;">{{ score }}</span>
+      <span style="font-size:2rem;opacity:.7;"> / {{ total }}</span>
+    </div>
+
+    <!-- Barre de score -->
+    <div class="progress mb-3" style="height:14px;background:rgba(255,255,255,.2);">
+<div class="progress-bar"
+     style="width: {{ percentage }}%;
+            background:
+            {% if percentage >= 80 %}
+                #16a34a
+            {% elif percentage >= 60 %}
+                #f59e0b
+            {% else %}
+                #dc2626
+            {% endif %};">
+</div>
+    </div>
+    <p class="mb-1 opacity-75">{{ percentage }}% de bonnes réponses</p>
+
+    <!-- XP gagné -->
+    {% if xp %}
+    <div class="mt-3 p-2 rounded-xl d-inline-block"
+         style="background:rgba(245,158,11,.2);border:1px solid #f59e0b;">
+      <i class="bi bi-star-fill text-warning me-1"></i>
+      <span class="fw-bold text-warning">+{{ xp }} XP gagnés !</span>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- Nouveaux badges -->
+  {% if new_badges %}
+  <div class="card p-4 mb-4 text-center"
+       style="border:2px solid #f59e0b !important;">
+    <h5 class="fw-bold text-or mb-3">🎉 Nouveaux badges débloqués !</h5>
+    <div class="d-flex flex-wrap justify-content-center gap-3">
+      {% for badge in new_badges %}
+      <div class="p-3 rounded-xl" style="background:#fef3c7;min-width:110px;">
+        <div style="font-size:2rem;">{{ badge.icon }}</div>
+        <div class="fw-bold small mt-1">{{ badge.name }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Boutons action -->
+  <div class="d-flex flex-wrap gap-3 justify-content-center mb-4">
+    <a href="{% url 'start' %}" class="btn btn-primary btn-lg rounded-xl px-4">
+      <i class="bi bi-arrow-repeat me-2"></i>Rejouer
+    </a>
+    <a href="{% url 'leaderboard' %}" class="btn btn-outline-secondary btn-lg rounded-xl px-4">
+      <i class="bi bi-trophy me-2"></i>Classement
+    </a>
+    <a href="{% url 'home' %}" class="btn btn-outline-secondary btn-lg rounded-xl px-4">
+      <i class="bi bi-house me-2"></i>Accueil
+    </a>
+  </div>
+
+  <!-- Correction détaillée -->
+  {% if answers %}
+  <div class="card p-4">
+    <h5 class="fw-bold mb-4">
+      <i class="bi bi-list-check me-2 text-bleu"></i>Correction détaillée
+    </h5>
+    {% for a in answers %}
+    <div class="mb-3 p-3 rounded-xl
+      {% if a.is_correct %}bg-success bg-opacity-10{% else %}bg-danger bg-opacity-10{% endif %}">
+
+      <div class="d-flex gap-2 align-items-start">
+        <span style="font-size:1.3rem;">
+          {% if a.is_correct %}✅{% else %}❌{% endif %}
+        </span>
+        <div class="flex-grow-1">
+          <p class="fw-semibold mb-1">{{ forloop.counter }}. {{ a.question }}</p>
+          {% if not a.is_correct %}
+          <p class="mb-1 text-danger small">
+            <i class="bi bi-x-circle me-1"></i>Ta réponse : <strong>{{ a.user_answer|default:"(pas de réponse)" }}</strong>
+          </p>
+          {% endif %}
+          <p class="mb-1 text-success small">
+            <i class="bi bi-check-circle me-1"></i>Bonne réponse : <strong>{{ a.correct_answer }}. {{ a.correct_answer_text }}</strong>
+          </p>
+          {% if a.explanation %}
+          <p class="text-muted small mb-0">
+            <i class="bi bi-info-circle me-1"></i>{{ a.explanation }}
+          </p>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

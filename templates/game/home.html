@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block title %}Génie Biblique Organisé{% endblock %}
+{% block nav_game %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container text-center">
+    <h1><i class="bi bi-controller me-2"></i>Génie Biblique Organisé</h1>
+    <p>Crée ou rejoins une partie en temps réel avec tes amis</p>
+  </div>
+</div>
+
+<div class="container pb-5">
+  <div class="row g-4">
+
+    <!-- ── Rejoindre par code ── -->
+    <div class="col-md-5">
+      <div class="card p-4 h-100 game-card">
+        <div class="game-card-meta mb-3"><span class="meta-tag">🔍 Partie rapide</span></div>
+        <div class="text-center mb-4">
+          <div style="font-size:3rem;">🔑</div>
+          <h4 class="fw-bold">Rejoindre une partie</h4>
+          <p class="text-muted">Entre le code partagé par l'organisateur</p>
+        </div>
+
+        <form method="GET" action="{% url 'join_game' %}">
+          <div class="mb-3">
+            <input type="text" name="code"
+                   class="form-control form-control-lg text-center fw-bold rounded-xl"
+                   style="font-size:2rem;letter-spacing:10px;"
+                   placeholder="ABC123" maxlength="6" required
+                   oninput="this.value=this.value.toUpperCase()">
+          </div>
+          <button class="btn btn-primary btn-lg w-100 rounded-xl">
+            <i class="bi bi-door-open me-2"></i>Rejoindre
+          </button>
+        </form>
+
+        <hr class="my-3">
+        <p class="text-center text-muted small">
+          Tu as reçu un lien ? Clique directement dessus,<br>
+          tu seras redirigé automatiquement.
+        </p>
+      </div>
+    </div>
+
+    <!-- ── Créer une partie ── -->
+    <div class="col-md-7">
+      <div class="card p-4 h-100 game-card" style="border:2px solid var(--or) !important;">
+        <div class="game-card-meta mb-3"><span class="meta-tag">⚡ Jeu en temps réel</span></div>
+        <div class="text-center mb-3">
+          <div style="font-size:3rem;">🏆</div>
+          <h4 class="fw-bold">Organiser une partie</h4>
+          <p class="text-muted">Tu choisis les règles et tu invites tes amis</p>
+        </div>
+
+        <form method="POST" action="{% url 'create_game' %}">
+          {% csrf_token %}
+
+          <div class="row g-3 mb-3">
+            <!-- Livre -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">
+                <i class="bi bi-book me-1 text-bleu"></i>Livre biblique
+              </label>
+              <select name="book" class="form-select rounded-xl">
+                <option value="">📚 Tous les livres</option>
+                {% for book in books %}
+                <option value="{{ book.name }}">{{ book.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Difficulté -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">
+                <i class="bi bi-bar-chart me-1 text-bleu"></i>Difficulté
+              </label>
+              <select name="difficulty" class="form-select rounded-xl">
+                <option value="all">🎯 Toutes</option>
+                <option value="facile">🌱 Facile</option>
+                <option value="moyen">📖 Moyen</option>
+                <option value="difficile">🔥 Difficile</option>
+                <option value="expert">💎 Expert</option>
+              </select>
+            </div>
+
+            <!-- Nombre de questions -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">
+                <i class="bi bi-hash me-1 text-bleu"></i>Questions :
+                <span id="qnum" class="text-bleu fw-bold">10</span>
+              </label>
+              <input type="range" name="count" class="form-range"
+                     min="5" max="20" step="5" value="10"
+                     oninput="document.getElementById('qnum').textContent=this.value">
+            </div>
+
+            <!-- Temps par question -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">
+                <i class="bi bi-stopwatch me-1 text-danger"></i>Temps/question :
+                <span id="tnum" class="text-danger fw-bold">15</span>s
+              </label>
+              <input type="range" name="time" class="form-range"
+                     min="10" max="30" step="5" value="15"
+                     oninput="document.getElementById('tnum').textContent=this.value">
+            </div>
+          </div>
+
+          <!-- Info anti-IA -->
+          <div class="alert rounded-xl p-2 mb-3"
+               style="background:#fef3c7;border-left:4px solid #f59e0b;font-size:.85rem;">
+            <i class="bi bi-shield-check text-warning me-1"></i>
+            <strong>Anti-IA :</strong> timer court + options mélangées différemment pour chaque joueur.
+          </div>
+
+          <button type="submit" class="btn btn-or btn-lg w-100 rounded-xl">
+            <i class="bi bi-plus-circle me-2"></i>Créer la partie
+          </button>
+        </form>
+
+      </div>
+    </div>
+
+  </div><!-- /row -->
+
+  <!-- ── Parties en attente ── -->
+  {% if active_games %}
+  <div class="mt-5">
+    <h5 class="fw-bold mb-3">
+      <i class="bi bi-broadcast text-success me-2"></i>
+      Parties ouvertes en ce moment
+    </h5>
+    <div class="row g-3">
+      {% for g in active_games %}
+      <div class="col-md-4">
+        <div class="card p-3 game-card">
+          <div class="game-card-meta mb-3"><span class="meta-tag">❓ Partie active</span></div>
+          <div class="d-flex align-items-center gap-3">
+            <div style="font-size:2rem;">🎮</div>
+            <div class="flex-grow-1">
+              <div class="fw-bold">
+                Code : <span class="text-bleu">{{ g.code }}</span>
+              </div>
+              <div class="text-muted small">
+                Organisé par <strong>{{ g.organizer.username }}</strong> ·
+                {{ g.player_count }} joueur{{ g.player_count|pluralize }}
+              </div>
+              <div class="text-muted small">
+                {{ g.question_count }} questions · {{ g.time_per_question }}s par question
+              </div>
+            </div>
+            <a href="{% url 'join_game' %}?code={{ g.code }}"
+               class="btn btn-primary btn-sm rounded-xl">
+              Rejoindre
+            </a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}Nous contacter | Génie Biblique{% endblock %}
+
+{# Ajout de CSS spécifique pour les icônes dans les champs #}
+{% block extra_css %}
+<style>
+    .input-group-text {
+        background-color: var(--gris-clair);
+        color: var(--bleu-nuit);
+        border-right: none;
+    }
+    .form-control {
+        border-left: none;
+    }
+    .form-control:focus {
+        box-shadow: none;
+        border-color: #ced4da; /* Garde la couleur par défaut au focus */
+    }
+    /* Style pour les labels flottants (si vous préférez, commentez ceci si non utilisé) */
+    .form-floating > label {
+        padding-left: 3.5rem; /* Pour décaler le label après l'icône */
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header text-center">
+    <h1>Nous contacter</h1>
+    <p class="lead">Une question, une suggestion ? Notre équipe est à votre écoute.</p>
+</div>
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-lg p-4 p-md-5 rounded-xl">
+                
+                <form method="post" class="needs-validation" novalidate>
+                    {% csrf_token %}
+
+                    <!-- Champ Nom (avec icône) -->
+                    <div class="mb-4">
+                        <label for="{{ form.name.id_for_label }}" class="form-label fw-bold text-bleu">
+                            <i class="bi bi-person-fill me-1"></i> Nom complet
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-person"></i></span>
+                            {{ form.name }}
+                        </div>
+                        <div class="invalid-feedback">Veuillez entrer votre nom.</div>
+                    </div>
+
+                    <!-- Champ Email (avec icône) -->
+                    <div class="mb-4">
+                        <label for="{{ form.email.id_for_label }}" class="form-label fw-bold text-bleu">
+                            <i class="bi bi-envelope-fill me-1"></i> Adresse email
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                            {{ form.email }}
+                        </div>
+                        <div class="invalid-feedback">Veuillez entrer une adresse email valide.</div>
+                    </div>
+
+                    <!-- Champ Sujet (avec icône) -->
+                    <div class="mb-4">
+                        <label for="{{ form.subject.id_for_label }}" class="form-label fw-bold text-bleu">
+                            <i class="bi bi-tag-fill me-1"></i> Sujet
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-tag"></i></span>
+                            {{ form.subject }}
+                        </div>
+                        <div class="invalid-feedback">Veuillez indiquer le sujet de votre message.</div>
+                    </div>
+
+                    <!-- Champ Message (avec icône alignée en haut) -->
+                    <div class="mb-4">
+                        <label for="{{ form.message.id_for_label }}" class="form-label fw-bold text-bleu">
+                            <i class="bi bi-chat-left-text-fill me-1"></i> Votre message
+                        </label>
+                        <div class="input-group align-items-start">
+                            <span class="input-group-text pt-3"><i class="bi bi-chat-left-text"></i></span>
+                            {{ form.message }}
+                        </div>
+                        <div class="invalid-feedback">Veuillez écrire votre message.</div>
+                    </div>
+
+                    <!-- Bouton d'envoi centré -->
+                    <div class="d-flex justify-content-center mt-5">
+                        <button type="submit" class="btn btn-primary btn-lg px-5 rounded-pill shadow-sm">
+                            <i class="bi bi-send-fill me-2"></i> Envoyer le message
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+            
+            {# Informations de contact supplémentaires #}
+            <div class="text-center mt-5 text-muted">
+                <p>Ou contactez-nous directement :</p>
+                <p>
+                    <i class="bi bi-envelope-fill text-or me-1"></i> degnonsamuel@gmail.com.com |
+                    <i class="bi bi-telephone-fill text-or ms-2 me-1"></i> +229 0151780886 /0140125754
+                </p>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{# Ajout de JS pour la validation côté client #}
+{% block extra_js %}
+<script>
+    // Activation de la validation Bootstrap
+    (function () {
+      'use strict'
+      var forms = document.querySelectorAll('.needs-validation')
+      Array.prototype.slice.call(forms)
+        .forEach(function (form) {
+          form.addEventListener('submit', function (event) {
+            if (!form.checkValidity()) {
+              event.preventDefault()
+              event.stopPropagation()
+            }
+            form.classList.add('was-validated')
+          }, false)
+        })
+    })()
+</script>
+{% endblock %}

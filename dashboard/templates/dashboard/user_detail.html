@@ -1,0 +1,168 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}{{ target_user.username }}{% endblock %}
+{% block nav_users %}active{% endblock %}
+
+{% block content %}
+
+<div class="topbar">
+  <h1><i class="bi bi-person-circle me-2"></i>{{ target_user.username }}</h1>
+  <a href="{% url 'dashboard_users' %}" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-arrow-left"></i> Retour
+  </a>
+</div>
+
+<div class="row g-3">
+
+  <!-- ── Colonne infos ── -->
+  <div class="col-lg-4">
+
+    <div class="chart-card mb-3">
+      <h6 class="fw-bold mb-3">Informations</h6>
+      <table class="table table-sm mb-0">
+        <tr><td class="text-muted">Username</td><td class="fw-semibold">{{ target_user.username }}</td></tr>
+        <tr><td class="text-muted">Email</td><td>{{ target_user.email|default:"—" }}</td></tr>
+        <tr><td class="text-muted">Inscrit le</td><td>{{ target_user.date_joined|date:"d/m/Y à H:i" }}</td></tr>
+        <tr><td class="text-muted">Dernière connexion</td><td>{{ target_user.last_login|date:"d/m/Y à H:i"|default:"Jamais" }}</td></tr>
+        <tr><td class="text-muted">Statut</td>
+          <td>
+            {% if target_user.is_active %}
+              <span class="badge bg-success">Actif</span>
+            {% else %}
+              <span class="badge bg-danger">Désactivé</span>
+            {% endif %}
+            {% if target_user.is_staff %}<span class="badge bg-dark ms-1">Admin</span>{% endif %}
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="chart-card mb-3">
+      <h6 class="fw-bold mb-3">Statistiques du profil</h6>
+      <div class="row g-2 text-center">
+        <div class="col-6">
+          <div class="p-2 bg-light rounded-3">
+            <div class="fw-bold text-warning fs-5">{{ profile.total_xp }}</div>
+            <div class="small text-muted">XP</div>
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="p-2 bg-light rounded-3">
+            <div class="fw-bold text-primary fs-5">{{ profile.level }}</div>
+            <div class="small text-muted">Niveau</div>
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="p-2 bg-light rounded-3">
+            <div class="fw-bold text-success fs-5">{{ profile.accuracy_rate }}%</div>
+            <div class="small text-muted">Précision</div>
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="p-2 bg-light rounded-3">
+            <div class="fw-bold text-danger fs-5">{{ profile.streak_days }}🔥</div>
+            <div class="small text-muted">Streak</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions admin -->
+    <div class="chart-card">
+      <h6 class="fw-bold mb-3">Actions</h6>
+
+      <form method="POST" action="{% url 'dashboard_toggle_active' target_user.id %}" class="mb-2">
+        {% csrf_token %}
+        {% if target_user.is_active %}
+        <button class="btn btn-outline-danger w-100" onclick="return confirm('Désactiver ce compte ?')">
+          <i class="bi bi-slash-circle me-1"></i>Désactiver le compte
+        </button>
+        {% else %}
+        <button class="btn btn-outline-success w-100">
+          <i class="bi bi-check-circle me-1"></i>Réactiver le compte
+        </button>
+        {% endif %}
+      </form>
+
+      <form method="POST" action="{% url 'dashboard_toggle_staff' target_user.id %}">
+        {% csrf_token %}
+        {% if target_user.is_staff %}
+        <button class="btn btn-outline-secondary w-100" onclick="return confirm('Retirer les droits admin ?')">
+          <i class="bi bi-shield-x me-1"></i>Retirer les droits admin
+        </button>
+        {% else %}
+        <button class="btn btn-outline-dark w-100" onclick="return confirm('Promouvoir cet utilisateur admin ?')">
+          <i class="bi bi-shield-check me-1"></i>Promouvoir administrateur
+        </button>
+        {% endif %}
+      </form>
+    </div>
+
+  </div>
+
+  <!-- ── Colonne activité ── -->
+  <div class="col-lg-8">
+
+    <!-- Badges -->
+    <div class="chart-card mb-3">
+      <h6 class="fw-bold mb-3">Badges obtenus ({{ badges|length }})</h6>
+      {% if badges %}
+      <div class="d-flex flex-wrap gap-2">
+        {% for ub in badges %}
+        <div class="p-2 bg-light rounded-3 text-center" style="min-width:90px;">
+          <div style="font-size:1.5rem;">{{ ub.badge.icon }}</div>
+          <div class="small fw-semibold">{{ ub.badge.name }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="text-muted mb-0">Aucun badge obtenu.</p>
+      {% endif %}
+    </div>
+
+    <!-- Scores -->
+    <div class="chart-card mb-3">
+      <h6 class="fw-bold mb-3">Historique des quiz (20 derniers)</h6>
+      <div class="table-responsive">
+        <table class="table table-modern mb-0">
+          <thead><tr><th>Date</th><th>Score</th><th>Difficulté</th><th>XP</th></tr></thead>
+          <tbody>
+            {% for s in scores %}
+            <tr>
+              <td class="text-muted small">{{ s.created_at|date:"d/m/Y H:i" }}</td>
+              <td class="fw-bold">{{ s.score }}/{{ s.total }} ({{ s.percentage }}%)</td>
+              <td><span class="badge bg-secondary">{{ s.difficulty }}</span></td>
+              <td class="text-warning fw-bold">+{{ s.xp_earned }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-center text-muted py-3">Aucun quiz joué.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Parties -->
+    <div class="chart-card">
+      <h6 class="fw-bold mb-3">Parties organisées jouées</h6>
+      <div class="table-responsive">
+        <table class="table table-modern mb-0">
+          <thead><tr><th>Code</th><th>Score</th><th>Statut</th></tr></thead>
+          <tbody>
+            {% for gp in games %}
+            <tr>
+              <td class="fw-bold text-primary">{{ gp.game.code }}</td>
+              <td>{{ gp.score }} pts</td>
+              <td><span class="badge bg-secondary">{{ gp.game.status }}</span></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3" class="text-center text-muted py-3">Aucune partie jouée.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}

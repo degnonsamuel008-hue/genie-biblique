@@ -1,0 +1,163 @@
+/* ================= GLOBAL STYLES ================= */
+:root {
+  --bleu-nuit: #1a2744;
+  --bleu-vif:  #2563eb;
+  --or:        #f59e0b;
+  --vert:      #16a34a;
+  --gris-clair:#f8fafc;
+  --text-base: #1f2937;
+}
+
+html, body {
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', sans-serif;
+  color: var(--text-base);
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+}
+
+body.dark-mode {
+  background: #0b1223;
+  color: #e2e8f0;
+}
+
+.container {
+  max-width: 1180px;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--bleu-nuit);
+}
+
+.card {
+  border: none;
+  border-radius: 22px;
+  box-shadow: 0 14px 40px rgba(15, 23, 42, 0.08);
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.12);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--bleu-vif), #1d4ed8);
+  border: none;
+}
+
+.btn-or {
+  background: linear-gradient(135deg, var(--or), #d97706);
+  border: none;
+}
+
+.btn-outline-light {
+  border-color: rgba(255,255,255,.25);
+}
+
+.page-header {
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+  color: #fff;
+  border-radius: 0 0 28px 28px;
+}
+
+.page-header h1,
+.page-header p {
+  margin: 0;
+}
+
+.meta-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(37, 99, 235, 0.08);
+  color: #1d4ed8;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.game-card {
+  border: 1px solid rgba(37, 99, 235, 0.12);
+}
+
+.game-card-meta {
+  font-size: 0.8rem;
+  letter-spacing: .4px;
+}
+
+.threejs-card {
+  padding: 22px !important;
+  min-height: 320px;
+}
+
+.threejs-wrapper {
+  width: 100%;
+  min-height: 280px;
+  border-radius: 22px;
+  overflow: hidden;
+  background: radial-gradient(circle at top, rgba(37,99,235,.12), transparent 45%),
+              radial-gradient(circle at bottom right, rgba(245, 158, 11, .1), transparent 30%),
+              #f8fafc;
+}
+
+.threejs-wrapper canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Fallback shown when WebGL or Three.js can't render */
+.threejs-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #475569;
+  font-weight: 600;
+  background: transparent;
+  z-index: 1;
+}
+
+.option-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 18px 22px;
+  margin-bottom: 14px;
+  background: #ffffff;
+  border: 2px solid #e2e8f0;
+  border-radius: 18px;
+  transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+
+.option-btn:hover {
+  border-color: var(--bleu-vif);
+  transform: translateX(3px);
+}
+
+.option-btn.selected {
+  border-color: var(--bleu-vif);
+  background: #eff6ff;
+}
+
+.option-letter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  font-weight: 800;
+}
+
+@media (max-width: 991px) {
+  .card { border-radius: 18px; }
+}
+
+@media (max-width: 767px) {
+  .page-header { padding: 28px 18px; }
+}

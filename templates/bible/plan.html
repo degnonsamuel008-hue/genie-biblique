@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% block title %}Bible en 1 an — Jour {{ today_num }}{% endblock %}
+{% block nav_bible %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+  .day-dot {
+    width: 20px; height: 20px;
+    border-radius: 4px;
+    display: inline-block;
+    cursor: pointer;
+    transition: transform .15s;
+  }
+  .day-dot:hover { transform: scale(1.3); }
+  .day-dot.done  { background: #16a34a; }
+  .day-dot.today { background: #2563eb; outline: 3px solid #93c5fd; }
+  .day-dot.todo  { background: #e2e8f0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container text-center">
+    <h1><i class="bi bi-book-fill me-2"></i>Bible en 1 an</h1>
+    <p>Jour {{ today_num }} sur 365 — {{ total_done }} jours lus</p>
+  </div>
+</div>
+
+<div class="container pb-5">
+  <div class="row g-4">
+
+    <!-- ── Colonne principale ── -->
+    <div class="col-lg-7">
+
+      <!-- Passage du jour -->
+      {% if today %}
+      <div class="card p-4 mb-4"
+           style="border-left:5px solid var(--or) !important;">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <div>
+            <span class="badge bg-warning text-dark mb-2">Aujourd'hui — Jour {{ today_num }}</span>
+            <h4 class="fw-bold mb-1">{{ today.title }}</h4>
+            <p class="text-bleu fw-semibold mb-0">
+              <i class="bi bi-bookmark-fill me-1"></i>{{ today.reference }}
+            </p>
+          </div>
+          {% if today_num in done_ids %}
+          <span class="badge bg-success fs-6 p-2">✅ Lu</span>
+          {% endif %}
+        </div>
+
+        {% if today.summary %}
+        <p class="text-muted" style="line-height:1.7;">{{ today.summary }}</p>
+        {% endif %}
+
+        {% if today_num not in done_ids %}
+        <a href="{% url 'mark_done' today.day_number %}"
+           class="btn btn-vert rounded-xl mt-2">
+          <i class="bi bi-check-circle me-2"></i>J'ai lu ce passage aujourd'hui ✓
+        </a>
+        {% else %}
+        <div class="alert alert-success rounded-xl mb-0 mt-2">
+          <i class="bi bi-check-circle-fill me-2"></i>
+          Bravo ! Tu as lu ce passage. Reviens demain pour continuer ton streak 🔥
+        </div>
+        {% endif %}
+      </div>
+      {% else %}
+      <div class="card p-4 mb-4 text-center text-muted">
+        <div style="font-size:2.5rem;">📅</div>
+        <p class="mt-2">Aucun passage défini pour aujourd'hui.<br>
+        Demande à l'administrateur d'ajouter le plan de lecture.</p>
+      </div>
+      {% endif %}
+
+      <!-- Grille calendrier -->
+      <div class="card p-4">
+        <h5 class="fw-bold mb-1">
+          <i class="bi bi-grid-3x3-gap me-2 text-bleu"></i>Calendrier annuel
+        </h5>
+        <p class="text-muted small mb-3">
+          <span class="day-dot done d-inline-block me-1" style="width:14px;height:14px;"></span> Lu
+          <span class="day-dot today d-inline-block mx-2" style="width:14px;height:14px;"></span> Aujourd'hui
+          <span class="day-dot todo d-inline-block ms-1 me-1" style="width:14px;height:14px;"></span> À lire
+        </p>
+
+        <div class="d-flex flex-wrap gap-1">
+          {% for day in all_days %}
+          <div class="day-dot
+            {% if day.day_number == today_num %}today
+            {% elif day.id in done_ids %}done
+            {% else %}todo{% endif %}"
+            title="Jour {{ day.day_number }} : {{ day.reference }}">
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+    </div><!-- /col principale -->
+
+    <!-- ── Colonne latérale ── -->
+    <div class="col-lg-5">
+
+      <!-- Progression -->
+      <div class="card p-4 mb-4">
+        <h5 class="fw-bold mb-3">
+          <i class="bi bi-bar-chart-fill text-bleu me-2"></i>Ma progression
+        </h5>
+        <div class="text-center mb-3">
+          <div style="font-size:2.5rem;font-weight:800;color:var(--bleu-vif);">
+            {{ total_done }}
+          </div>
+          <div class="text-muted">jours lus sur 365</div>
+        </div>
+        <div class="progress mb-2" style="height:14px;">
+          <div class="progress-bar bg-success"
+               style="width:{% widthratio total_done 365 100 %}%"></div>
+        </div>
+        <div class="d-flex justify-content-between text-muted small">
+          <span>0</span>
+          <span>{% widthratio total_done 365 100 %}%</span>
+          <span>365</span>
+        </div>
+      </div>
+
+      <!-- Streak -->
+      {% if user.is_authenticated %}
+      <div class="card p-4 mb-4 text-center">
+        <div style="font-size:3rem;">🔥</div>
+        <h5 class="fw-bold mt-1">{{ user.userprofile.streak_days }} jours de suite</h5>
+        <p class="text-muted small">
+          Continue à lire chaque jour pour maintenir ton streak !
+        </p>
+        {% if user.userprofile.streak_days >= 7 %}
+        <span class="badge bg-warning text-dark fs-6 p-2">🔥 En feu !</span>
+        {% elif user.userprofile.streak_days >= 3 %}
+        <span class="badge bg-primary fs-6 p-2">📈 Bonne dynamique !</span>
+        {% else %}
+        <span class="badge bg-secondary fs-6 p-2">🌱 Continue !</span>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <!-- Récompenses lecture -->
+      <div class="card p-4">
+        <h5 class="fw-bold mb-3">
+          <i class="bi bi-award-fill text-or me-2"></i>Récompenses
+        </h5>
+        <div class="d-flex flex-column gap-2">
+
+          <div class="d-flex align-items-center gap-3 p-2 rounded-xl
+            {% if total_done >= 7 %}bg-success bg-opacity-10{% else %}bg-light opacity-50{% endif %}">
+            <span style="font-size:1.5rem;">📖</span>
+            <div>
+              <div class="fw-bold small">Lecteur assidu</div>
+              <div class="text-muted" style="font-size:.75rem;">Lire 7 jours</div>
+            </div>
+            {% if total_done >= 7 %}<i class="bi bi-check-circle-fill text-success ms-auto"></i>{% endif %}
+          </div>
+
+          <div class="d-flex align-items-center gap-3 p-2 rounded-xl
+            {% if total_done >= 30 %}bg-success bg-opacity-10{% else %}bg-light opacity-50{% endif %}">
+            <span style="font-size:1.5rem;">🌟</span>
+            <div>
+              <div class="fw-bold small">Un mois fidèle</div>
+              <div class="text-muted" style="font-size:.75rem;">Lire 30 jours</div>
+            </div>
+            {% if total_done >= 30 %}<i class="bi bi-check-circle-fill text-success ms-auto"></i>{% endif %}
+          </div>
+
+          <div class="d-flex align-items-center gap-3 p-2 rounded-xl
+            {% if total_done >= 365 %}bg-warning bg-opacity-20{% else %}bg-light opacity-50{% endif %}">
+            <span style="font-size:1.5rem;">💎</span>
+            <div>
+              <div class="fw-bold small">Bible complète !</div>
+              <div class="text-muted" style="font-size:.75rem;">Lire les 365 jours</div>
+            </div>
+            {% if total_done >= 365 %}<i class="bi bi-check-circle-fill text-warning ms-auto"></i>{% endif %}
+          </div>
+
+        </div>
+      </div>
+
+    </div><!-- /col latérale -->
+  </div>
+</div>
+{% endblock %}

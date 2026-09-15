@@ -1,0 +1,322 @@
+{% extends "base.html" %}
+{% block title %}Salle d'attente — {{ game.code }}{% endblock %}
+{% block nav_game %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+  .player-card {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 16px; border-radius: 12px;
+    background: #f8fafc; border: 2px solid #e2e8f0;
+    margin-bottom: 10px; transition: all .3s;
+  }
+  .player-card.host  { border-color: var(--or); background: #fef3c7; }
+  .player-card.me    { border-color: var(--bleu-vif); background: #dbeafe; }
+  .player-card.new   { animation: slideIn .4s ease; }
+
+  @keyframes slideIn {
+    from { opacity:0; transform: translateX(-20px); }
+    to   { opacity:1; transform: translateX(0); }
+  }
+
+  .pulse { animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+  .share-btn {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px; border-radius: 10px;
+    border: 2px solid #e2e8f0; background: #fff;
+    font-weight: 600; font-size: .9rem;
+    cursor: pointer; transition: all .2s;
+    text-decoration: none; color: #1e293b;
+    width: 100%;
+  }
+  .share-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,.1); }
+  .share-btn.whatsapp:hover { border-color: #25D366; background: #f0fdf4; }
+  .share-btn.facebook:hover { border-color: #1877F2; background: #eff6ff; }
+  .share-btn.telegram:hover { border-color: #0088CC; background: #e0f2fe; }
+  .share-btn.twitter:hover  { border-color: #1DA1F2; background: #e0f2fe; }
+  .share-btn.email:hover    { border-color: #6b7280; background: #f9fafb; }
+  .share-btn.copy:hover     { border-color: var(--or); background: #fef3c7; }
+
+  .code-display {
+    font-size: 3rem; font-weight: 900;
+    letter-spacing: 12px; color: #f59e0b;
+    text-shadow: 0 2px 8px rgba(245,158,11,.3);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row g-4 justify-content-center">
+
+    <!-- ══ Colonne principale ══ -->
+    <div class="col-lg-6">
+
+      <!-- Code + QR -->
+      <div class="card p-4 mb-4 text-center"
+           style="background:linear-gradient(135deg,#1a2744,#1e3a8a);color:#fff;">
+        <p class="mb-1 opacity-75 small">CODE DE LA PARTIE</p>
+        <div class="code-display">{{ game.code }}</div>
+        <p class="opacity-60 small mt-1">Partage ce code ou le lien ci-dessous</p>
+
+        <!-- Lien direct -->
+        <div class="input-group mt-2">
+          <input type="text" id="invite-url" class="form-control rounded-start"
+                 value="{{ invite_url }}" readonly
+                 style="font-size:.8rem;background:#fff;color:#1e293b;">
+          <button class="btn btn-warning rounded-end fw-bold"
+                  onclick="copyLink()" id="copy-btn">
+            <i class="bi bi-clipboard"></i> Copier
+          </button>
+        </div>
+
+        <!-- QR Code -->
+        {% if qr_code %}
+        <div class="mt-3 d-flex justify-content-center">
+          <div style="background:#fff;padding:10px;border-radius:12px;display:inline-block;">
+            <img src="data:image/png;base64,{{ qr_code }}"
+                 alt="QR Code" width="120" height="120">
+          </div>
+        </div>
+        <p class="opacity-60 small mt-2">📱 Scanner avec le téléphone pour rejoindre</p>
+        {% endif %}
+      </div>
+
+      <!-- Boutons de partage -->
+      <div class="card p-4 mb-4">
+        <h6 class="fw-bold mb-3">
+          <i class="bi bi-share me-2 text-bleu"></i>Partager via…
+        </h6>
+        <div class="row g-2">
+          <div class="col-6">
+            <a href="{{ share_links.whatsapp }}" target="_blank"
+               class="share-btn whatsapp">
+              <span style="font-size:1.3rem;">💬</span> WhatsApp
+            </a>
+          </div>
+          <div class="col-6">
+            <a href="{{ share_links.telegram }}" target="_blank"
+               class="share-btn telegram">
+              <span style="font-size:1.3rem;">✈️</span> Telegram
+            </a>
+          </div>
+          <div class="col-6">
+            <a href="{{ share_links.facebook }}" target="_blank"
+               class="share-btn facebook">
+              <span style="font-size:1.3rem;">📘</span> Facebook
+            </a>
+          </div>
+          <div class="col-6">
+            <a href="{{ share_links.twitter }}" target="_blank"
+               class="share-btn twitter">
+              <span style="font-size:1.3rem;">🐦</span> Twitter / X
+            </a>
+          </div>
+          <div class="col-6">
+            <a href="{{ share_links.email }}" class="share-btn email">
+              <span style="font-size:1.3rem;">📧</span> Email
+            </a>
+          </div>
+          <div class="col-6">
+            <button onclick="copyLink()" class="share-btn copy">
+              <span style="font-size:1.3rem;">📋</span> Copier le lien
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Paramètres -->
+      <div class="card p-4">
+        <h6 class="fw-bold mb-3">
+          <i class="bi bi-gear me-2 text-bleu"></i>Paramètres de la partie
+        </h6>
+        <div class="row g-2 text-center">
+          <div class="col-4">
+            <div class="bg-light rounded-xl p-3">
+              <div class="fw-bold text-bleu fs-5">{{ game.question_count }}</div>
+              <div class="text-muted small">Questions</div>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="bg-light rounded-xl p-3">
+              <div class="fw-bold text-danger fs-5">{{ game.time_per_question }}s</div>
+              <div class="text-muted small">Par question</div>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="bg-light rounded-xl p-3">
+              <div class="fw-bold text-or fs-5" style="font-size:.85rem !important;">
+                {% if game.book_filter %}{{ game.book_filter }}{% else %}Tous{% endif %}
+              </div>
+              <div class="text-muted small">Livre</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /col principale -->
+
+    <!-- ══ Colonne joueurs ══ -->
+    <div class="col-lg-5">
+
+      <!-- Liste des joueurs -->
+      <div class="card p-4 mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="fw-bold mb-0">
+            <i class="bi bi-people-fill me-2 text-bleu"></i>
+            Joueurs (<span id="player-count">{{ players|length }}</span>)
+          </h5>
+          <span class="badge bg-success pulse">
+            <i class="bi bi-circle-fill" style="font-size:.5rem;"></i> En attente
+          </span>
+        </div>
+
+        <div id="players-list">
+          {% for player in players %}
+          <div class="player-card
+            {% if player.user == game.organizer %}host
+            {% elif player.user == request.user %}me{% endif %}">
+            <div style="font-size:1.6rem;">
+              {% if player.user == game.organizer %}👑
+              {% elif player.user == request.user %}🎮
+              {% else %}👤{% endif %}
+            </div>
+            <div class="flex-grow-1">
+              <div class="fw-bold">{{ player.user.username }}</div>
+              <div class="text-muted small">
+                {% if player.user == game.organizer %}Organisateur
+                {% elif player.user == request.user %}Toi
+                {% else %}Joueur{% endif %}
+              </div>
+            </div>
+            <span class="badge bg-success">Connecté</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Bouton démarrer -->
+      {% if is_organizer %}
+      <form method="POST">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-or btn-lg w-100 rounded-xl mb-2"
+                id="start-btn"
+                {% if players|length < 2 %}disabled{% endif %}>
+          <i class="bi bi-play-fill me-2"></i>Démarrer la partie !
+        </button>
+      </form>
+      {% if players|length < 2 %}
+      <p class="text-muted text-center small">
+        <i class="bi bi-info-circle me-1"></i>
+        Attends qu'au moins 1 autre joueur rejoigne.
+      </p>
+      {% endif %}
+
+      {% else %}
+      <!-- Joueur non-organisateur : attente -->
+      <div class="card p-4 text-center">
+        <div style="font-size:3rem;" class="pulse">⏳</div>
+        <h5 class="fw-bold mt-2">En attente du démarrage…</h5>
+        <p class="text-muted small">
+          L'organisateur <strong>{{ game.organizer.username }}</strong>
+          démarrera la partie quand tout le monde sera prêt.
+        </p>
+        <div class="progress mt-3" style="height:6px;">
+          <div class="progress-bar bg-warning progress-bar-striped progress-bar-animated"
+               style="width:100%"></div>
+        </div>
+      </div>
+      {% endif %}
+
+    </div><!-- /col joueurs -->
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // ── Copier le lien ──
+  function copyLink() {
+    const url = document.getElementById('invite-url').value;
+    navigator.clipboard.writeText(url).then(() => {
+      const btn = document.getElementById('copy-btn');
+      const old = btn.innerHTML;
+      btn.innerHTML = '<i class="bi bi-check-circle"></i> Copié !';
+      btn.classList.replace('btn-warning', 'btn-success');
+      setTimeout(() => {
+        btn.innerHTML = old;
+        btn.classList.replace('btn-success', 'btn-warning');
+      }, 2000);
+    });
+  }
+
+  // ── Auto-refresh du lobby toutes les 3 secondes ──
+  {% if not is_organizer %}
+  let lastCount = {{ players|length }};
+
+  async function checkLobby() {
+    try {
+      const res  = await fetch("{% url 'lobby_status' game.code %}");
+      const data = await res.json();
+
+      // Partie démarrée → rediriger vers le jeu
+      if (data.status === 'playing') {
+        window.location.href = "{% url 'game_play' game.code %}";
+        return;
+      }
+
+      // Nouveau joueur → mettre à jour l'affichage
+      if (data.player_count !== lastCount) {
+        lastCount = data.player_count;
+        document.getElementById('player-count').textContent = data.player_count;
+
+        const list = document.getElementById('players-list');
+        list.innerHTML = data.players.map(p => `
+          <div class="player-card new">
+            <div style="font-size:1.6rem;">👤</div>
+            <div class="flex-grow-1">
+              <div class="fw-bold">${p.user__username}</div>
+              <div class="text-muted small">Joueur</div>
+            </div>
+            <span class="badge bg-success">Connecté</span>
+          </div>
+        `).join('');
+      }
+    } catch(e) { console.log('Erreur lobby check', e); }
+  }
+
+  setInterval(checkLobby, 3000);
+  {% endif %}
+
+  // ── L'organisateur : refresh pour voir les nouveaux joueurs ──
+  {% if is_organizer %}
+  async function refreshPlayers() {
+    try {
+      const res  = await fetch("{% url 'lobby_status' game.code %}");
+      const data = await res.json();
+      document.getElementById('player-count').textContent = data.player_count;
+
+      const list = document.getElementById('players-list');
+      list.innerHTML = data.players.map((p, i) => `
+        <div class="player-card ${i === 0 ? 'host' : ''}">
+          <div style="font-size:1.6rem;">${i === 0 ? '👑' : '👤'}</div>
+          <div class="flex-grow-1">
+            <div class="fw-bold">${p.user__username}</div>
+            <div class="text-muted small">${i === 0 ? 'Organisateur' : 'Joueur'}</div>
+          </div>
+          <span class="badge bg-success">Connecté</span>
+        </div>
+      `).join('');
+
+      // Activer le bouton démarrer si 2+ joueurs
+      const btn = document.getElementById('start-btn');
+      if (btn) btn.disabled = data.player_count < 2;
+    } catch(e) { console.log('Erreur refresh', e); }
+  }
+
+  setInterval(refreshPlayers, 3000);
+  {% endif %}
+</script>
+{% endblock %}

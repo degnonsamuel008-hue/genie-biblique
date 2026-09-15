@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+{% block title %}Question {{ index }} — Génie Biblique{% endblock %}
+
+{% block extra_css %}
+<style>
+  .option-btn {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 14px 20px;
+    margin-bottom: 12px;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    background: #fff;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all .2s;
+    font-weight: 500;
+  }
+  .option-btn:hover {
+    border-color: var(--bleu-vif);
+    background: #eff6ff;
+    transform: translateX(4px);
+  }
+  .option-btn.selected {
+    border-color: var(--bleu-vif);
+    background: #dbeafe;
+    color: var(--bleu-vif);
+  }
+  .timer-circle {
+    width: 70px; height: 70px;
+    border-radius: 50%;
+    background: var(--bleu-nuit);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.6rem; font-weight: 800;
+    flex-shrink: 0;
+  }
+  .timer-circle.warning { background: #d97706; }
+  .timer-circle.danger  { background: #dc2626; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width:700px;">
+
+  <!-- En-tête : progression + timer -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <span class="fw-bold text-bleu">Question {{ index }}</span>
+      <span class="text-muted"> / {{ total }}</span>
+    </div>
+    <div class="timer-circle" id="timer-circle">
+      <span id="timer">{{ question.time_limit }}</span>
+    </div>
+  </div>
+
+  <div id="question-3d" class="threejs-wrapper mb-3" style="border-radius:12px;overflow:hidden;background:linear-gradient(180deg,#fff,#eef2ff);position:relative;">
+    <div class="threejs-fallback" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#475569;font-weight:600;">Rendu 3D indisponible — vérifiez la console</div>
+  </div>
+
+  <!-- Barre de progression -->
+  <div class="progress mb-4">
+    <div class="progress-bar bg-primary" style="width:{{ progress }}%"
+         id="progress-bar"></div>
+  </div>
+
+  <!-- Carte question -->
+  <div class="card p-4 mb-4">
+    <!-- Méta -->
+    <div class="d-flex gap-2 mb-3">
+      <span class="badge bg-secondary">{{ question.book.name }}</span>
+      {% if question.difficulty == 'facile' %}
+        <span class="badge bg-success">🌱 Facile</span>
+      {% elif question.difficulty == 'moyen' %}
+        <span class="badge bg-warning text-dark">📖 Moyen</span>
+      {% elif question.difficulty == 'difficile' %}
+        <span class="badge bg-danger">🔥 Difficile</span>
+      {% else %}
+        <span class="badge bg-dark">💎 Expert</span>
+      {% endif %}
+    </div>
+
+    <h4 class="fw-bold mb-0" style="line-height:1.5;">{{ question.question }}</h4>
+  </div>
+
+  <!-- Formulaire réponses -->
+<form method="POST" action="{% url 'question' %}" id="quiz-form">
+    {% csrf_token %}
+    {% for opt in options %}
+    <button type="button" class="option-btn"
+            onclick="choisir(this, '{{ opt|escapejs }}')"
+            data-val="{{ opt }}">
+      <span class="me-2" style="color:#94a3b8;">
+        {% if forloop.counter == 1 %}A{% elif forloop.counter == 2 %}B
+        {% elif forloop.counter == 3 %}C{% else %}D{% endif %}.
+      </span>
+      {{ opt }}
+    </button>
+    {% endfor %}
+    <!-- Champ caché pour la réponse choisie -->
+    <input type="hidden" name="answer" id="answer-hidden" value="">
+    <!-- Bouton valider (caché jusqu'à sélection) -->
+    <button type="submit" class="btn btn-primary btn-lg w-100 rounded-xl mt-2 d-none"
+            id="btn-valider">
+      <i class="bi bi-check-circle me-2"></i>Valider ma réponse
+    </button>
+  </form>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r152/three.min.js"></script>
+<script>
+  // ── Timer ──
+  let temps      = {{ question.time_limit }};
+  const tMax     = {{ question.time_limit }};
+  const el       = document.getElementById('timer');
+  const circle   = document.getElementById('timer-circle');
+  const bar      = document.getElementById('progress-bar');
+  let   choisi   = false;
+
+  const interval = setInterval(() => {
+    temps--;
+    el.textContent = temps;
+
+    // Couleur du timer selon le temps restant
+    if (temps <= 5)      { circle.className = 'timer-circle danger'; }
+    else if (temps <= 10){ circle.className = 'timer-circle warning'; }
+
+    // Si le temps est écoulé → soumettre automatiquement
+    if (temps <= 0) {
+      clearInterval(interval);
+      document.getElementById('quiz-form').submit();
+    }
+  }, 1000);
+
+  // ── Choix d'une réponse ──
+  function choisir(btn, valeur) {
+    if (choisi) return;     // empêcher de rechoisir
+    choisi = true;
+
+    // Marquer le bouton sélectionné
+    document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+
+    // Mettre la valeur dans le champ caché
+    document.getElementById('answer-hidden').value = valeur;
+
+    // Afficher le bouton Valider
+    document.getElementById('btn-valider').classList.remove('d-none');
+  }
+</script>
+<script>
+  (function(){
+    const container = document.getElementById('question-3d');
+    console.log('ThreeJS (question) - window.THREE =', !!window.THREE, 'containerExists=', !!container);
+    if (!container) return;
+    console.log('question-3d size', container.clientWidth, 'x', container.clientHeight);
+    try {
+      if (!window.THREE) throw new Error('Three.js non chargé');
+      const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, container.clientWidth/container.clientHeight, 0.1, 1000);
+    camera.position.set(0,0,8);
+    const renderer = new THREE.WebGLRenderer({ alpha:true, antialias:true });
+    // Improve crispness on high-DPI screens and ensure the canvas fills the wrapper
+    renderer.setPixelRatio(window.devicePixelRatio || 1);
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.domElement.style.width = '100%';
+    renderer.domElement.style.height = '100%';
+      container.appendChild(renderer.domElement);
+      // Hide fallback when renderer is present
+      const fb = container.querySelector('.threejs-fallback'); if (fb) fb.style.display = 'none';
+    scene.add(new THREE.AmbientLight(0xffffff,0.8));
+
+    const group = new THREE.Group(); scene.add(group);
+
+    // Create several sprites with '?' drawn on canvas
+    function makeSprite(char, color){
+      const cv = document.createElement('canvas'); cv.width=128; cv.height=128; const ctx = cv.getContext('2d');
+      ctx.fillStyle='rgba(255,255,255,0.9)'; ctx.fillRect(0,0,128,128);
+      ctx.fillStyle=color; ctx.font='bold 88px Arial'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(char,64,70);
+      return new THREE.CanvasTexture(cv);
+    }
+    const textures = [makeSprite('?', '#2563eb'), makeSprite('?', '#f59e0b')];
+
+    const sprites = [];
+    for (let i=0;i<8;i++){
+      const material = new THREE.SpriteMaterial({ map: textures[i%2], transparent:true });
+      const s = new THREE.Sprite(material);
+      s.scale.set(1.6,1.6,1);
+      s.position.set((Math.random()-0.5)*6, (Math.random()-0.2)*2, (Math.random()-0.5)*2);
+      group.add(s); sprites.push(s);
+    }
+
+    function animate(){
+      const t = Date.now()*0.001;
+      group.rotation.y = Math.sin(t*0.5)*0.12;
+      sprites.forEach((s,i)=>{
+        s.position.y += Math.sin(t*0.6 + i) * 0.002;
+        s.position.x += Math.cos(t*0.4 + i) * 0.002;
+      });
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    }
+    animate();
+    } catch (err) {
+      // Log error but don't break page functionality
+      console.error('ThreeJS (question) init error:', err);
+    }
+    window.addEventListener('resize', ()=>{ renderer.setSize(container.clientWidth, container.clientHeight); camera.aspect = container.clientWidth/container.clientHeight; camera.updateProjectionMatrix(); });
+  })();
+</script>
+{% endblock %}

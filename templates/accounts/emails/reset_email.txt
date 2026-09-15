@@ -1,0 +1,12 @@
+Bonjour,
+
+Quelqu'un a demandé une réinitialisation de mot de passe pour votre compte sur BibleGame.
+
+Veuillez cliquer sur le lien suivant pour choisir un nouveau mot de passe :
+
+{{ protocol }}://{{ domain }}{% url 'password_reset_confirm' uidb64=uid token=token %}
+
+Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet email en toute sécurité.
+
+Cordialement,
+L'équipe BibleGame

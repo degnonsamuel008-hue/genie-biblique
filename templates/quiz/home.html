@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}Accueil — Génie Biblique{% endblock %}
+{% block nav_home %}active{% endblock %}
+
+{% block content %}
+
+<!-- ── Hero ── -->
+<div style="background:linear-gradient(135deg,#1a2744 0%,#1e3a8a 60%,#1e40af 100%);
+            padding:70px 0 50px;color:#fff;">
+  <div class="container text-center">
+    <div style="font-size:4rem;margin-bottom:12px;">✝</div>
+    <h1 class="fw-bold" style="font-size:2.8rem;">Génie Biblique</h1>
+    <p class="lead opacity-75 mb-4">
+      Teste ta connaissance des Saintes Écritures.<br>
+      Entraîne-toi, participe aux jeux organisés, lis la Bible en 1 an.
+    </p>
+    <div class="d-flex flex-wrap justify-content-center gap-3">
+      <a href="{% url 'start' %}" class="btn btn-or btn-lg px-4 rounded-xl">
+        <i class="bi bi-play-fill me-2"></i>Commencer le quiz
+      </a>
+      <a href="{% url 'game_home' %}" class="btn btn-outline-light btn-lg px-4 rounded-xl">
+        <i class="bi bi-controller me-2"></i>Génie organisé
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="container py-5">
+
+  <!-- ── Stats globales ── -->
+  <div class="row g-3 mb-5">
+    <div class="col-6 col-md-3">
+      <div class="card p-3 text-center">
+        <div class="fs-2 fw-bold text-bleu">{{ stats.total_questions }}</div>
+        <div class="text-muted small">Questions</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card p-3 text-center">
+        <div class="fs-2 fw-bold text-success">{{ stats.total_players }}</div>
+        <div class="text-muted small">Joueurs</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card p-3 text-center">
+        <div class="fs-2 fw-bold text-or">{{ stats.total_games }}</div>
+        <div class="text-muted small">Parties jouées</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card p-3 text-center">
+        <div class="fs-2 fw-bold" style="color:#7c3aed;">66</div>
+        <div class="text-muted small">Livres bibliques</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Les 3 modes ── -->
+  <h2 class="fw-bold text-center mb-4" style="color:var(--bleu-nuit)">Que veux-tu faire ?</h2>
+  <div class="row g-4 mb-5">
+
+    <!-- Entraînement -->
+    <div class="col-md-4">
+      <div class="card p-4 h-100 text-center">
+        <div style="font-size:3rem;margin-bottom:12px;">📖</div>
+        <h4 class="fw-bold">Entraînement</h4>
+        <p class="text-muted">
+          Joue seul, choisis ton livre et ta difficulté.
+          Gagne des XP et progresse à ton rythme.
+        </p>
+        <a href="{% url 'start' %}" class="btn btn-primary rounded-xl mt-auto">
+          <i class="bi bi-play-fill me-1"></i>Démarrer
+        </a>
+      </div>
+    </div>
+
+    <!-- Génie Organisé -->
+    <div class="col-md-4">
+      <div class="card p-4 h-100 text-center"
+           style="border: 2px solid var(--or) !important;">
+        <div style="font-size:3rem;margin-bottom:12px;">🏆</div>
+        <h4 class="fw-bold">Génie Biblique</h4>
+        <p class="text-muted">
+          Rejoins ou organise une partie en temps réel.
+          Rivalise avec d'autres joueurs !
+        </p>
+        <a href="{% url 'game_home' %}" class="btn btn-or rounded-xl mt-auto">
+          <i class="bi bi-controller me-1"></i>Jouer
+        </a>
+      </div>
+    </div>
+
+    <!-- Bible 1 an -->
+    <div class="col-md-4">
+      <div class="card p-4 h-100 text-center">
+        <div style="font-size:3rem;margin-bottom:12px;">📅</div>
+        <h4 class="fw-bold">Bible en 1 an</h4>
+        <p class="text-muted">
+          Lis la Bible entière en 365 jours.
+          Un passage par jour, un streak à maintenir.
+        </p>
+        <a href="{% url 'bible_plan' %}" class="btn btn-vert rounded-xl mt-auto">
+          <i class="bi bi-book me-1"></i>Commencer
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Top 5 scores récents ── -->
+  <div class="row g-4">
+    <div class="col-md-6">
+      <div class="card p-4">
+        <h5 class="fw-bold mb-3">
+          <i class="bi bi-trophy-fill text-or me-2"></i>Top 5 scores récents
+        </h5>
+        {% if top_scores %}
+        <ol class="mb-0 ps-3">
+          {% for s in top_scores %}
+          <li class="mb-2 d-flex justify-content-between align-items-center">
+            <span class="fw-semibold">{{ s.user.username|default:"Anonyme" }}</span>
+            <span>
+              <span class="badge bg-primary">{{ s.score }}/{{ s.total }}</span>
+              <span class="badge bg-warning text-dark ms-1">{{ s.difficulty }}</span>
+            </span>
+          </li>
+          {% endfor %}
+        </ol>
+        {% else %}
+        <p class="text-muted">Sois le premier à jouer !</p>
+        {% endif %}
+        <a href="{% url 'leaderboard' %}" class="btn btn-outline-secondary btn-sm mt-3 rounded-xl">
+          Voir tout le classement <i class="bi bi-arrow-right ms-1"></i>
+        </a>
+      </div>
+    </div>
+
+    <!-- Citation du jour -->
+    <div class="col-md-6">
+      <div class="card p-4 h-100"
+           style="background:linear-gradient(135deg,#1a2744,#1e3a8a);color:#fff;">
+        <h5 class="fw-bold mb-3 text-warning">
+          <i class="bi bi-quote me-2"></i>Verset du jour
+        </h5>
+        <p class="fst-italic" style="font-size:1.1rem;line-height:1.7;">
+          « Car Dieu a tant aimé le monde qu'il a donné son Fils unique,
+          afin que quiconque croit en lui ne périsse point,
+          mais qu'il ait la vie éternelle. »
+        </p>
+        <p class="text-warning fw-bold mb-0">— Jean 3:16</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}

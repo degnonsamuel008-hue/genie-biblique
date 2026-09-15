@@ -1,0 +1,388 @@
+{% extends "base.html" %}
+{% block title %}Question {{ answered|add:1 }}/{{ total }} — {{ game.code }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  body { user-select:none; }
+
+  /* ── Options ── */
+  .option-btn {
+    display: block; width: 100%;
+    text-align: left; padding: 16px 20px;
+    margin-bottom: 12px; border: 2.5px solid #e2e8f0;
+    border-radius: 14px; background: #fff;
+    font-size: 1rem; cursor: pointer;
+    transition: all .15s; font-weight: 500;
+    position: relative; overflow: hidden;
+  }
+  .option-btn::before {
+    content: ''; position: absolute; left: 0; top: 0;
+    height: 100%; width: 0;
+    background: rgba(37,99,235,.08);
+    transition: width .2s;
+  }
+  .option-btn:hover:not(:disabled)::before { width: 100%; }
+  .option-btn:hover:not(:disabled) {
+    border-color: var(--bleu-vif);
+    transform: translateX(4px);
+  }
+  .option-btn.selected {
+    border-color: var(--bleu-vif);
+    background: #dbeafe; color: #1d4ed8; font-weight: 700;
+  }
+  .option-btn:disabled { opacity: .55; cursor: not-allowed; }
+  .option-letter {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 50%;
+    background: #e2e8f0; font-weight: 800; font-size: .85rem;
+    margin-right: 10px; flex-shrink: 0;
+    transition: background .2s;
+  }
+  .option-btn.selected .option-letter { background: #2563eb; color: #fff; }
+
+  /* ── Timer SVG ── */
+  .timer-wrap { position: relative; width: 80px; height: 80px; }
+  #timer-svg  { transform: rotate(-90deg); }
+  #t-track { fill:none; stroke:#e2e8f0; stroke-width:8; }
+  #t-fill  { fill:none; stroke:#2563eb; stroke-width:8; stroke-linecap:round; transition: stroke-dashoffset .9s linear, stroke .3s; }
+  .timer-num {
+    position: absolute; top:50%; left:50%;
+    transform: translate(-50%,-50%);
+    font-size: 1.5rem; font-weight:900; color: var(--bleu-nuit);
+  }
+
+  /* ── Mini classement ── */
+  .mini-rank {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 10px; border-radius: 8px;
+    background: #f8fafc; margin-bottom: 6px;
+    font-size: .85rem;
+  }
+  .mini-rank.me { background: #dbeafe; font-weight: 700; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div oncontextmenu="return false" oncopy="return false">
+<div class="container py-3" style="max-width:900px;">
+  <div class="row g-4">
+
+    <div class="col-12">
+      <div class="card p-3 mb-4 threejs-card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <div class="fw-bold">Trajectoire 3D</div>
+            <div class="text-muted small">Suivez le chemin question par question.</div>
+          </div>
+          <div class="badge bg-primary">❓ Spline</div>
+        </div>
+        <div id="threejs-canvas" class="threejs-wrapper"></div>
+      </div>
+    </div>
+
+    <!-- ══ Colonne question ══ -->
+    <div class="col-lg-8">
+
+      <!-- En-tête -->
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <span class="fw-bold text-bleu fs-5">Q{{ answered|add:1 }}</span>
+          <span class="text-muted"> / {{ total }}</span>
+          <span class="badge bg-secondary ms-2">{{ game.code }}</span>
+        </div>
+        <!-- Timer circulaire -->
+        <div class="timer-wrap">
+          <svg id="timer-svg" width="80" height="80" viewBox="0 0 80 80">
+            <circle id="t-track" cx="40" cy="40" r="32"/>
+            <circle id="t-fill"  cx="40" cy="40" r="32"
+                    stroke-dasharray="201" stroke-dashoffset="0"/>
+          </svg>
+          <div class="timer-num" id="timer-num">{{ game.time_per_question }}</div>
+        </div>
+      </div>
+
+      <!-- Barre de progression -->
+      <div class="progress mb-4">
+        <div class="progress-bar bg-primary"
+             style="width:{{ progress }}%; transition: width .5s;"></div>
+      </div>
+
+      <!-- Carte question -->
+      <div class="card p-4 mb-4">
+        <div class="d-flex gap-2 mb-3">
+          <span class="badge bg-secondary">{{ question.book.name }}</span>
+          <span class="badge
+            {% if question.difficulty == 'facile' %}bg-success
+            {% elif question.difficulty == 'moyen' %}bg-warning text-dark
+            {% elif question.difficulty == 'difficile' %}bg-danger
+            {% else %}bg-dark{% endif %}">
+            {{ question.difficulty|capfirst }}
+          </span>
+        </div>
+        <h4 class="fw-bold mb-0" style="line-height:1.6;">
+          {{ question.question }}
+        </h4>
+      </div>
+
+      <!-- Formulaire réponses -->
+      <form method="POST" id="game-form">
+        {% csrf_token %}
+        <input type="hidden" name="answer"     id="answer-val" value="">
+        <input type="hidden" name="time_taken" id="time-val"   value="0">
+
+        {% for opt in options %}
+        <button type="button" class="option-btn"
+                data-val="{{ opt }}" onclick="choisir(this)">
+          <span class="option-letter">
+            {% if forloop.counter == 1 %}A
+            {% elif forloop.counter == 2 %}B
+            {% elif forloop.counter == 3 %}C
+            {% else %}D{% endif %}
+          </span>
+          {{ opt }}
+        </button>
+        {% endfor %}
+      </form>
+
+    </div><!-- /col question -->
+
+    <!-- ══ Colonne classement live ══ -->
+    <div class="col-lg-4">
+      <div class="card p-3 sticky-top" style="top:80px;">
+        <h6 class="fw-bold mb-3">
+          <i class="bi bi-bar-chart-fill text-or me-2"></i>Classement live
+        </h6>
+        {% for p in ranking %}
+        <div class="mini-rank {% if p.user == request.user %}me{% endif %}">
+          <span style="font-size:1rem;">
+            {% if forloop.counter == 1 %}🥇
+            {% elif forloop.counter == 2 %}🥈
+            {% elif forloop.counter == 3 %}🥉
+            {% else %}{{ forloop.counter }}{% endif %}
+          </span>
+          <span class="flex-grow-1">{{ p.user.username }}</span>
+          <span class="fw-bold text-bleu">{{ p.score }}</span>
+        </div>
+        {% endfor %}
+
+        <hr class="my-3">
+
+        <!-- Mon score -->
+        <div class="text-center">
+          <div class="fw-bold text-muted small">Mon score</div>
+          <div class="fw-bold text-bleu fs-4">{{ player.score }} pts</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /row -->
+</div><!-- /container -->
+</div><!-- /no-context -->
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r152/three.min.js"></script>
+<script>
+  const TMAX    = {{ game.time_per_question }};
+  const CIRC    = 2 * Math.PI * 32;
+  let   t       = TMAX;
+  let   choisi  = false;
+  let   start   = Date.now();
+
+  const numEl  = document.getElementById('timer-num');
+  const fillEl = document.getElementById('t-fill');
+  fillEl.style.strokeDasharray = CIRC;
+
+  function tick() {
+    const ratio  = t / TMAX;
+    fillEl.style.strokeDashoffset = CIRC * (1 - ratio);
+    numEl.textContent = t;
+
+    if      (t <= 5)  { fillEl.style.stroke = '#dc2626'; numEl.style.color='#dc2626'; }
+    else if (t <= 10) { fillEl.style.stroke = '#d97706'; numEl.style.color='#d97706'; }
+    else              { fillEl.style.stroke = '#2563eb'; numEl.style.color='#1a2744'; }
+
+    if (t <= 0) {
+      clearInterval(interval);
+      document.getElementById('time-val').value = TMAX;
+      document.getElementById('game-form').submit();
+    }
+    t--;
+  }
+
+  const interval = setInterval(tick, 1000);
+
+  function choisir(btn) {
+    if (choisi) return;
+    choisi = true;
+    clearInterval(interval);
+
+    document.querySelectorAll('.option-btn').forEach(b => {
+      b.disabled = true;
+      b.classList.remove('selected');
+    });
+    btn.classList.add('selected');
+    btn.disabled = false;
+
+    document.getElementById('answer-val').value = btn.dataset.val;
+    document.getElementById('time-val').value   =
+      ((Date.now() - start) / 1000).toFixed(2);
+
+    setTimeout(() => document.getElementById('game-form').submit(), 500);
+  }
+</script>
+<script>
+    const threeContainer = document.getElementById('threejs-canvas');
+    console.log('ThreeJS (play) - window.THREE =', !!window.THREE, 'threeContainerExists=', !!threeContainer);
+    if (threeContainer) {
+      console.log('threejs-canvas size', threeContainer.clientWidth, 'x', threeContainer.clientHeight);
+      // add fallback
+      const fb = document.createElement('div'); fb.className='threejs-fallback'; fb.style.cssText='position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#475569;font-weight:600;pointer-events:none;';
+      threeContainer.style.position = 'relative'; threeContainer.appendChild(fb);
+    }
+
+  if (threeContainer) {
+    try {
+      if (!window.THREE) throw new Error('Three.js non chargé');
+      const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf8fafc);
+
+    const camera = new THREE.PerspectiveCamera(40, threeContainer.clientWidth / threeContainer.clientHeight, 0.1, 1000);
+    camera.position.set(0, 5, 18);
+    camera.lookAt(0, 0, 0);
+
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(threeContainer.clientWidth, threeContainer.clientHeight);
+    threeContainer.appendChild(renderer.domElement);
+    const _fb = threeContainer.querySelector('.threejs-fallback'); if (_fb) _fb.style.display='none';
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+
+    const light = new THREE.DirectionalLight(0xffffff, 0.95);
+    light.position.set(8, 14, 10);
+    scene.add(light);
+
+    const points = [];
+    for (let i = 0; i < 8; i++) {
+      const angle = i * 0.85;
+      points.push(new THREE.Vector3(Math.sin(angle) * 5.8, i * 0.95 - 3.2, Math.cos(angle) * 4.2));
+    }
+
+    const curve = new THREE.CatmullRomCurve3(points);
+    const tubeGeometry = new THREE.TubeGeometry(curve, 160, 0.28, 18, false);
+    const tubeMaterial = new THREE.MeshStandardMaterial({
+      color: 0x2563eb,
+      emissive: 0x1f40b0,
+      metalness: 0.4,
+      roughness: 0.18,
+      transparent: true,
+      opacity: 0.94,
+    });
+    const tubeMesh = new THREE.Mesh(tubeGeometry, tubeMaterial);
+    scene.add(tubeMesh);
+
+    const linePoints = curve.getPoints(240);
+    const lineGeometry = new THREE.BufferGeometry().setFromPoints(linePoints);
+    const lineMaterial = new THREE.LineDashedMaterial({ color: 0x60a5fa, dashSize: 0.35, gapSize: 0.18, linewidth: 2 });
+    const line = new THREE.Line(lineGeometry, lineMaterial);
+    line.computeLineDistances();
+    scene.add(line);
+
+    const particleCount = 120;
+    const particleGeometry = new THREE.BufferGeometry();
+    const particlePositions = new Float32Array(particleCount * 3);
+    const particleSizes = new Float32Array(particleCount);
+
+    for (let i = 0; i < particleCount; i++) {
+      particlePositions[i * 3 + 0] = (Math.random() - 0.5) * 20;
+      particlePositions[i * 3 + 1] = Math.random() * 6 - 1.5;
+      particlePositions[i * 3 + 2] = (Math.random() - 0.5) * 16;
+      particleSizes[i] = 0.8 + Math.random() * 1.4;
+    }
+    particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+    particleGeometry.setAttribute('size', new THREE.BufferAttribute(particleSizes, 1));
+
+    const particleMaterial = new THREE.PointsMaterial({
+      color: 0x93c5fd,
+      size: 0.18,
+      transparent: true,
+      opacity: 0.75,
+      depthWrite: false,
+    });
+    const particles = new THREE.Points(particleGeometry, particleMaterial);
+    scene.add(particles);
+
+    const markerMaterial = new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0xd97706, emissiveIntensity: 0.4, roughness: 0.25 });
+    points.forEach((point, index) => {
+      const marker = new THREE.Mesh(new THREE.SphereGeometry(0.32, 18, 18), markerMaterial);
+      marker.position.copy(point);
+      scene.add(marker);
+
+      const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(createQuestionSprite()), transparent: true }));
+      sprite.scale.set(2.4, 2.4, 1);
+      sprite.position.copy(point).add(new THREE.Vector3(0, 0.9, 0));
+      scene.add(sprite);
+    });
+
+    const glowMaterial = new THREE.MeshBasicMaterial({ color: 0x60a5fa, transparent: true, opacity: 0.14 });
+    const glowMesh = new THREE.Mesh(new THREE.TubeGeometry(curve, 120, 0.65, 10, false), glowMaterial);
+    scene.add(glowMesh);
+
+    const floorGeometry = new THREE.PlaneGeometry(24, 14);
+    const floorMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, opacity: 0.3, transparent: true });
+    const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = -3.4;
+    scene.add(floor);
+
+    function createQuestionSprite() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 128;
+      canvas.height = 128;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = 'rgba(255,255,255,0.88)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = '#2563eb';
+      ctx.lineWidth = 8;
+      ctx.strokeRect(12, 12, canvas.width - 24, canvas.height - 24);
+      ctx.fillStyle = '#2563eb';
+      ctx.font = 'bold 70px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('?', canvas.width / 2, canvas.height / 2 + 4);
+      return canvas;
+    }
+
+    function resizeRenderer() {
+      const width = threeContainer.clientWidth;
+      const height = threeContainer.clientHeight;
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height);
+    }
+
+    window.addEventListener('resize', resizeRenderer);
+    resizeRenderer();
+
+    let time = 0;
+    function animateScene() {
+      time += 0.007;
+      tubeMesh.rotation.y = Math.sin(time * 0.4) * 0.08;
+      line.rotation.y = tubeMesh.rotation.y;
+      glowMesh.rotation.y = tubeMesh.rotation.y;
+      particles.rotation.y = tubeMesh.rotation.y * 0.25;
+      camera.position.x = Math.sin(time * 0.35) * 1.4;
+      camera.position.z = 18 + Math.sin(time * 0.12) * 0.8;
+      particles.position.y = Math.sin(time * 0.35) * 0.12;
+      camera.lookAt(0, 0, 0);
+      renderer.render(scene, camera);
+      requestAnimationFrame(animateScene);
+    }
+    animateScene();
+    } catch (err) {
+      console.error('ThreeJS (play) init error:', err);
+    }
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Inscription — Génie Biblique{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-5">
+
+      <!-- Carte inscription -->
+      <div class="card p-4 p-md-5">
+
+        <!-- En-tête -->
+        <div class="text-center mb-4">
+          <div style="font-size:3rem;">✝</div>
+          <h2 class="fw-bold" style="color:var(--bleu-nuit)">Créer un compte</h2>
+          <p class="text-muted">Rejoins la communauté Génie Biblique</p>
+        </div>
+
+        <!-- Formulaire -->
+        <form method="POST" novalidate>
+          {% csrf_token %}
+
+          {% if form.errors %}
+          <div class="alert alert-danger rounded-xl">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            Corrige les erreurs ci-dessous.
+          </div>
+          {% endif %}
+
+          <!-- Username -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">
+              <i class="bi bi-person me-1 text-bleu"></i>Nom d'utilisateur
+            </label>
+            <input type="text" name="username" class="form-control form-control-lg rounded-xl
+              {% if form.username.errors %}is-invalid{% endif %}"
+              placeholder="ton_pseudo" value="{{ form.username.value|default:'' }}" required>
+            {% for e in form.username.errors %}
+              <div class="invalid-feedback">{{ e }}</div>
+            {% endfor %}
+          </div>
+
+          <!-- Email -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">
+              <i class="bi bi-envelope me-1 text-bleu"></i>Email
+            </label>
+            <input type="email" name="email" class="form-control form-control-lg rounded-xl
+              {% if form.email.errors %}is-invalid{% endif %}"
+              placeholder="exemple@email.com" value="{{ form.email.value|default:'' }}">
+            {% for e in form.email.errors %}
+              <div class="invalid-feedback">{{ e }}</div>
+            {% endfor %}
+          </div>
+
+          <!-- Mot de passe -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">
+              <i class="bi bi-lock me-1 text-bleu"></i>Mot de passe
+            </label>
+            <input type="password" name="password" class="form-control form-control-lg rounded-xl
+              {% if form.password.errors %}is-invalid{% endif %}"
+              placeholder="••••••••" required>
+            {% for e in form.password.errors %}
+              <div class="invalid-feedback">{{ e }}</div>
+            {% endfor %}
+          </div>
+
+          <!-- Confirmer -->
+     <input type="password" name="password_confirm"
+       class="form-control form-control-lg rounded-xl
+       {% if form.password_confirm.errors %}is-invalid{% endif %}"
+       placeholder="••••••••" required>
+
+{% for e in form.password_confirm.errors %}
+    <div class="invalid-feedback">{{ e }}</div>
+{% endfor %}
+
+          <button type="submit" class="btn btn-primary btn-lg w-100 rounded-xl">
+            <i class="bi bi-person-check me-2"></i>Créer mon compte
+          </button>
+        </form>
+
+        <hr class="my-4">
+        <p class="text-center text-muted mb-0">
+          Déjà inscrit ?
+          <a href="{% url 'login' %}" class="text-bleu fw-semibold">Se connecter</a>
+        </p>
+
+      </div><!-- /card -->
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+{% block title %}BibleGame — Bienvenue{% endblock %}
+
+{% block extra_css %}
+<style>
+  .splash-hero {
+    /* Increase hero height so footer stays lower on short pages */
+    min-height: calc(100vh - 80px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at top, #ffffff, #dbeafe 45%, #eff6ff 100%);
+    color: #0f172a;
+    padding: 80px 0;
+  }
+  .splash-card {
+    width: 100%;
+    max-width: 980px;
+    border-radius: 30px;
+    overflow: hidden;
+    box-shadow: 0 28px 80px rgba(15, 23, 42, 0.12);
+    background: linear-gradient(180deg, rgba(255,255,255,0.99) 0%, #f8fbff 100%);
+  }
+  .splash-top {
+    padding: 60px 42px;
+    background: linear-gradient(135deg, #1e40af, #2563eb);
+    color: #fff;
+  }
+  .splash-top h1 {
+    font-size: 3rem;
+    line-height: 1.02;
+    margin-bottom: 18px;
+  }
+  .splash-top p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+  }
+  .splash-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.14);
+    border: 1px solid rgba(255,255,255,0.22);
+    font-weight: 700;
+  }
+  .splash-body {
+    padding: 40px 42px 48px;
+  }
+  .splash-body p {
+    font-size: 1.05rem;
+    line-height: 1.9;
+    color: #334155;
+  }
+  .splash-phrase {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: baseline;
+    margin-top: 30px;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #1e293b;
+  }
+  .splash-phrase span:last-child {
+    color: #2563eb;
+    position: relative;
+    overflow: hidden;
+  }
+  .fade-out {
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: opacity .3s ease, transform .3s ease;
+  }
+  .fade-in {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity .3s ease, transform .3s ease;
+  }
+  .countdown-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 12px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.22);
+    font-size: .95rem;
+    color: #f8fafc;
+  }
+  .btn-lg.ready {
+    box-shadow: 0 0 0 5px rgba(37, 99, 235, 0.18);
+  }
+  .splash-features {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    margin-top: 28px;
+  }
+  .feature-card {
+    border-radius: 22px;
+    padding: 24px;
+    background: #eef2ff;
+  }
+  .feature-card h4 { margin-bottom: 10px; }
+  .splash-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 32px;
+  }
+  .mini-score {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 20px;
+    border-radius: 18px;
+    border: 1px solid #c7d2fe;
+    background: #fff;
+  }
+  .mini-score strong { font-size: 1.55rem; }
+  @media (max-width: 768px) {
+    .splash-hero { padding: 48px 0; }
+    .splash-top { padding: 38px 28px; }
+    .splash-body { padding: 28px 28px 32px; }
+    .splash-features { grid-template-columns: 1fr; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+  <div class="splash-hero">
+  <div class="splash-card" data-aos="fade-up">
+    <div class="splash-top" data-aos="fade-down">
+      <span class="splash-badge">Bienvenue sur BibleGame</span>
+      <h1>Entre dans l'aventure biblique la plus captivante.</h1>
+      <p>Découvre des quiz, des défis en temps réel et un parcours de lecture qui te motive chaque jour.</p>
+    </div>
+    <div class="splash-body" data-aos="fade-up" data-aos-delay="120">
+      <p>BibleGame est un espace où l'histoire sacrée devient un jeu. Gagne des XP, débloque des badges, défie tes amis et reste sur la voie avec un plan de lecture en 1 an.</p>
+
+      <div class="splash-features">
+        <div class="feature-card" data-aos="fade-up" data-aos-delay="80">
+          <h4>Défis en direct</h4>
+          <p>Rejoins ou crée une partie instantanément et compare tes connaissances avec d'autres joueurs.</p>
+        </div>
+        <div class="feature-card" data-aos="fade-up" data-aos-delay="140">
+          <h4>Quiz immersifs</h4>
+          <p>Choisis ton niveau, explore les livres bibliques et progresse avec un système d'XP et de progression.</p>
+        </div>
+        <div class="feature-card" data-aos="fade-up" data-aos-delay="200">
+          <h4>Badges à débloquer</h4>
+          <p>Chaque bonne réponse te rapproche d'un badge et d'un nouveau rang spirituel.</p>
+        </div>
+        <div class="feature-card" data-aos="fade-up" data-aos-delay="260">
+          <h4>Lecture quotidienne</h4>
+          <p>Un plan simple pour lire la Bible en 365 jours et garder ta foi active.</p>
+        </div>
+      </div>
+
+      <div class="splash-phrase" data-aos="fade-left" data-aos-delay="220">
+        <span>Prêt pour</span>
+        <span id="animated-text">ton prochain défi ?</span>
+      </div>
+      <div class="splash-actions" data-aos="fade-up" data-aos-delay="320">
+        <a href="{% url 'home' %}" class="btn btn-primary btn-lg rounded-xl px-5" id="enter-button">
+          Explorer BibleGame
+          <span class="countdown-pill">Prêt dans <span id="countdown-num">5</span>s</span>
+        </a>
+        <a href="{% url 'start' %}" class="btn btn-or btn-lg rounded-xl px-5">
+          Commencer le quiz
+        </a>
+      </div>
+
+      <div class="mt-4">
+        <div class="mini-score">
+          <span>Top joueur</span>
+          <strong>{{ top_scores.0.user.username|default:'Invité' }}</strong>
+          <span class="badge bg-primary">{{ top_scores.0.score|default:0 }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const phrases = [
+    'ton prochain défi ?',
+    'le chemin des 66 livres.',
+    'la victoire spirituelle.',
+    'un badge à débloquer.',
+    'ta course vers la sagesse.',
+  ];
+  const animatedText = document.getElementById('animated-text');
+  let phraseIndex = 0;
+
+  function animatePhrase() {
+    animatedText.classList.add('fade-out');
+    setTimeout(() => {
+      phraseIndex = (phraseIndex + 1) % phrases.length;
+      animatedText.textContent = phrases[phraseIndex];
+      animatedText.classList.remove('fade-out');
+      animatedText.classList.add('fade-in');
+      setTimeout(() => animatedText.classList.remove('fade-in'), 600);
+    }, 300);
+  }
+
+  setInterval(animatePhrase, 3400);
+
+  const countdownNum = document.getElementById('countdown-num');
+  let count = 5;
+  const countdown = setInterval(() => {
+    count -= 1;
+    if (count <= 0) {
+      clearInterval(countdown);
+      countdownNum.textContent = 0;
+      document.getElementById('enter-button').classList.add('ready');
+      return;
+    }
+    countdownNum.textContent = count;
+  }, 1000);
+</script>
+{% endblock %}

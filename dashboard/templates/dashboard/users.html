@@ -1,0 +1,102 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Utilisateurs{% endblock %}
+{% block nav_users %}active{% endblock %}
+
+{% block content %}
+
+<div class="topbar">
+  <h1><i class="bi bi-people me-2"></i>Utilisateurs</h1>
+  <span class="badge bg-primary fs-6">{{ total_users }} au total</span>
+</div>
+
+<!-- Filtres -->
+<div class="chart-card mb-3">
+  <form method="GET" class="row g-2 align-items-end">
+    <div class="col-md-6">
+      <label class="form-label small fw-semibold">Rechercher</label>
+      <input type="text" name="q" value="{{ search }}"
+             class="form-control" placeholder="Nom d'utilisateur ou email...">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label small fw-semibold">Statut</label>
+      <select name="status" class="form-select">
+        <option value="">Tous</option>
+        <option value="active" {% if status == 'active' %}selected{% endif %}>Actifs</option>
+        <option value="inactive" {% if status == 'inactive' %}selected{% endif %}>Désactivés</option>
+        <option value="staff" {% if status == 'staff' %}selected{% endif %}>Administrateurs</option>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <button class="btn btn-primary w-100"><i class="bi bi-search"></i> Filtrer</button>
+    </div>
+  </form>
+</div>
+
+<!-- Table -->
+<div class="chart-card">
+  <div class="table-responsive">
+    <table class="table table-modern mb-0">
+      <thead>
+        <tr>
+          <th>Utilisateur</th><th>Email</th><th>Niveau</th><th>XP</th>
+          <th>Inscrit le</th><th>Statut</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in page_obj %}
+        <tr>
+          <td class="fw-semibold">
+            {{ u.username }}
+            {% if u.is_staff %}<span class="badge bg-dark ms-1">Admin</span>{% endif %}
+          </td>
+          <td class="text-muted small">{{ u.email|default:"—" }}</td>
+          <td>
+            {% if u.profile %}<span class="badge bg-secondary">{{ u.profile.level }}</span>{% endif %}
+          </td>
+          <td class="fw-bold text-warning">
+            {% if u.profile %}{{ u.profile.total_xp }}{% else %}0{% endif %}
+          </td>
+          <td class="text-muted small">{{ u.date_joined|date:"d/m/Y" }}</td>
+          <td>
+            {% if u.is_active %}
+              <span class="badge-status bg-success text-white">Actif</span>
+            {% else %}
+              <span class="badge-status bg-danger text-white">Désactivé</span>
+            {% endif %}
+          </td>
+          <td>
+            <a href="{% url 'dashboard_user_detail' u.id %}" class="btn btn-sm btn-outline-primary">
+              <i class="bi bi-eye"></i> Voir
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="text-center text-muted py-4">Aucun utilisateur trouvé.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  {% if page_obj.paginator.num_pages > 1 %}
+  <nav class="mt-3">
+    <ul class="pagination pagination-sm justify-content-center mb-0">
+      {% if page_obj.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ search }}&status={{ status }}">Précédent</a>
+      </li>
+      {% endif %}
+      <li class="page-item active">
+        <span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+      </li>
+      {% if page_obj.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ search }}&status={{ status }}">Suivant</a>
+      </li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
+</div>
+
+{% endblock %}

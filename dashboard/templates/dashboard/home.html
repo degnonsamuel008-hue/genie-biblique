@@ -1,0 +1,319 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Tableau de bord{% endblock %}
+{% block nav_home %}active{% endblock %}
+
+{% block content %}
+
+<div class="topbar">
+  <h1><i class="bi bi-speedometer2 me-2"></i>Tableau de bord</h1>
+  <span class="text-muted small">{{ "now"|date:"d F Y" }}</span>
+</div>
+
+<!-- ═══ Cartes statistiques ═══ -->
+<div class="row g-3 mb-4">
+
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#dbeafe;color:#2563eb;">
+        <i class="bi bi-people-fill"></i>
+      </div>
+      <div class="stat-value">{{ stats.total_users }}</div>
+      <div class="stat-label">Utilisateurs inscrits</div>
+      <div class="stat-trend text-success mt-1">
+        <i class="bi bi-arrow-up-short"></i> +{{ stats.new_users_week }} cette semaine
+      </div>
+    </div>
+  </div>
+
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#dcfce7;color:#16a34a;">
+        <i class="bi bi-question-circle-fill"></i>
+      </div>
+      <div class="stat-value">{{ stats.total_questions }}</div>
+      <div class="stat-label">Questions en base</div>
+    </div>
+  </div>
+
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#fef3c7;color:#d97706;">
+        <i class="bi bi-trophy-fill"></i>
+      </div>
+      <div class="stat-value">{{ stats.total_scores }}</div>
+      <div class="stat-label">Quiz joués</div>
+      <div class="stat-trend text-success mt-1">
+        <i class="bi bi-arrow-up-short"></i> +{{ stats.scores_week }} cette semaine
+      </div>
+    </div>
+  </div>
+
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#ede9fe;color:#7c3aed;">
+        <i class="bi bi-controller"></i>
+      </div>
+      <div class="stat-value">{{ stats.total_games }}</div>
+      <div class="stat-label">Parties organisées</div>
+      <div class="stat-trend text-primary mt-1">
+        <i class="bi bi-broadcast"></i> {{ stats.active_games }} en cours
+      </div>
+    </div>
+  </div>
+
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#fee2e2;color:#dc2626;">
+        <i class="bi bi-percent"></i>
+      </div>
+      <div class="stat-value">{{ stats.avg_accuracy }}%</div>
+      <div class="stat-label">Précision moyenne</div>
+    </div>
+  </div>
+
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#fef3c7;color:#d97706;">
+        <i class="bi bi-star-fill"></i>
+      </div>
+      <div class="stat-value">{{ stats.total_xp_distributed }}</div>
+      <div class="stat-label">XP distribués au total</div>
+    </div>
+  </div>
+
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#dcfce7;color:#16a34a;">
+        <i class="bi bi-award-fill"></i>
+      </div>
+      <div class="stat-value">{{ stats.total_badges_earned }}</div>
+      <div class="stat-label">Badges débloqués</div>
+    </div>
+  </div>
+
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#dbeafe;color:#2563eb;">
+        <i class="bi bi-book-fill"></i>
+      </div>
+      <div class="stat-value">{{ stats.active_readers }}</div>
+      <div class="stat-label">Lecteurs actifs (Bible)</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══ Graphiques ═══ -->
+<div class="row g-3 mb-4">
+
+  <!-- Inscriptions -->
+  <div class="col-lg-6">
+    <div class="chart-card">
+      <h6 class="fw-bold mb-3">
+        <i class="bi bi-graph-up-arrow me-2 text-primary"></i>Inscriptions (30 derniers jours)
+      </h6>
+      <canvas id="signupsChart" height="180"></canvas>
+    </div>
+  </div>
+
+  <!-- Quiz joués -->
+  <div class="col-lg-6">
+    <div class="chart-card">
+      <h6 class="fw-bold mb-3">
+        <i class="bi bi-bar-chart-fill me-2 text-success"></i>Quiz joués (30 derniers jours)
+      </h6>
+      <canvas id="scoresChart" height="180"></canvas>
+    </div>
+  </div>
+
+  <!-- Répartition difficulté -->
+  <div class="col-lg-4">
+    <div class="chart-card h-100">
+      <h6 class="fw-bold mb-3">
+        <i class="bi bi-pie-chart-fill me-2 text-warning"></i>Répartition par difficulté
+      </h6>
+      <canvas id="diffChart" height="220"></canvas>
+    </div>
+  </div>
+
+  <!-- Questions par livre -->
+  <div class="col-lg-8">
+    <div class="chart-card h-100">
+      <h6 class="fw-bold mb-3">
+        <i class="bi bi-book-half me-2 text-primary"></i>Top 10 livres (nombre de questions)
+      </h6>
+      <canvas id="booksChart" height="180"></canvas>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══ Tables ═══ -->
+<div class="row g-3">
+
+  <!-- Top joueurs -->
+  <div class="col-lg-6">
+    <div class="chart-card">
+      <h6 class="fw-bold mb-3">
+        <i class="bi bi-trophy me-2 text-warning"></i>Top 10 joueurs
+      </h6>
+      <div class="table-responsive">
+        <table class="table table-modern mb-0">
+          <thead><tr><th>#</th><th>Joueur</th><th>Niveau</th><th>XP</th></tr></thead>
+          <tbody>
+            {% for p in top_players %}
+            <tr>
+              <td>{{ forloop.counter }}</td>
+              <td class="fw-semibold">{{ p.user.username }}</td>
+              <td><span class="badge bg-secondary">{{ p.level }}</span></td>
+              <td class="fw-bold text-warning">{{ p.total_xp }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dernières inscriptions -->
+  <div class="col-lg-6">
+    <div class="chart-card">
+      <h6 class="fw-bold mb-3">
+        <i class="bi bi-person-plus me-2 text-primary"></i>Dernières inscriptions
+      </h6>
+      <div class="table-responsive">
+        <table class="table table-modern mb-0">
+          <thead><tr><th>Utilisateur</th><th>Email</th><th>Date</th><th></th></tr></thead>
+          <tbody>
+            {% for u in recent_users %}
+            <tr>
+              <td class="fw-semibold">{{ u.username }}</td>
+              <td class="text-muted small">{{ u.email|default:"—" }}</td>
+              <td class="text-muted small">{{ u.date_joined|date:"d/m/Y" }}</td>
+              <td>
+                <a href="{% url 'dashboard_user_detail' u.id %}" class="btn btn-sm btn-outline-primary">
+                  Voir
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dernières parties -->
+  <div class="col-12">
+    <div class="chart-card">
+      <h6 class="fw-bold mb-3">
+        <i class="bi bi-controller me-2 text-purple"></i>Dernières parties organisées
+      </h6>
+      <div class="table-responsive">
+        <table class="table table-modern mb-0">
+          <thead>
+            <tr><th>Code</th><th>Organisateur</th><th>Statut</th><th>Questions</th><th>Temps/Q</th><th>Créée le</th></tr>
+          </thead>
+          <tbody>
+            {% for g in recent_games %}
+            <tr>
+              <td class="fw-bold text-primary">{{ g.code }}</td>
+              <td>{{ g.organizer.username }}</td>
+              <td>
+                {% if g.status == 'waiting' %}<span class="badge-status bg-warning text-dark">En attente</span>
+                {% elif g.status == 'playing' %}<span class="badge-status bg-success text-white">En cours</span>
+                {% else %}<span class="badge-status bg-secondary text-white">Terminée</span>
+                {% endif %}
+              </td>
+              <td>{{ g.question_count }}</td>
+              <td>{{ g.time_per_question }}s</td>
+              <td class="text-muted small">{{ g.created_at|date:"d/m/Y H:i" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const chartColors = {
+    blue:   '#2563eb', green: '#16a34a', orange:'#f59e0b',
+    purple: '#7c3aed', red:   '#dc2626', gray:  '#94a3b8'
+  };
+
+  // ── Inscriptions (ligne) ──
+  new Chart(document.getElementById('signupsChart'), {
+    type: 'line',
+    data: {
+      labels: {{ signups_labels|safe }},
+      datasets: [{
+        label: 'Nouveaux utilisateurs',
+        data: {{ signups_data|safe }},
+        borderColor: chartColors.blue,
+        backgroundColor: 'rgba(37,99,235,.08)',
+        fill: true, tension: .3, pointRadius: 2,
+      }]
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+    }
+  });
+
+  // ── Quiz joués (barres) ──
+  new Chart(document.getElementById('scoresChart'), {
+    type: 'bar',
+    data: {
+      labels: {{ scores_labels|safe }},
+      datasets: [{
+        label: 'Quiz joués',
+        data: {{ scores_data|safe }},
+        backgroundColor: chartColors.green,
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+    }
+  });
+
+  // ── Difficulté (donut) ──
+  new Chart(document.getElementById('diffChart'), {
+    type: 'doughnut',
+    data: {
+      labels: {{ diff_labels|safe }},
+      datasets: [{
+        data: {{ diff_counts|safe }},
+        backgroundColor: [chartColors.green, chartColors.orange, chartColors.red, '#1e293b'],
+      }]
+    },
+    options: { plugins: { legend: { position: 'bottom' } } }
+  });
+
+  // ── Questions par livre (barres horizontales) ──
+  new Chart(document.getElementById('booksChart'), {
+    type: 'bar',
+    data: {
+      labels: {{ books_labels|safe }},
+      datasets: [{
+        label: 'Questions',
+        data: {{ books_counts|safe }},
+        backgroundColor: chartColors.blue,
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      plugins: { legend: { display: false } },
+      scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
+    }
+  });
+</script>
+{% endblock %}

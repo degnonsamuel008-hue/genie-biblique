@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block title %}Démarrer un quiz{% endblock %}
+{% block nav_quiz %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container text-center">
+    <h1><i class="bi bi-pencil-square me-2"></i>Entraînement Solo</h1>
+    <p>Choisis tes paramètres et c'est parti !</p>
+  </div>
+</div>
+
+<div class="container pb-5">
+  <div class="row justify-content-center">
+    <div class="col-md-7">
+      <div class="card p-4 p-md-5">
+
+        <form method="POST" action="{% url 'start' %}">
+          {% csrf_token %}
+
+          <!-- Livre -->
+          <div class="mb-4">
+            <label class="form-label fw-bold fs-6">
+              <i class="bi bi-book me-1 text-bleu"></i>Livre biblique
+            </label>
+            <select name="book" class="form-select form-select-lg rounded-xl">
+              <option value="">📚 Tous les livres</option>
+              {% for book in books %}
+                <option value="{{ book.id }}">{{ book.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Difficulté -->
+          <div class="mb-4">
+            <label class="form-label fw-bold fs-6">
+              <i class="bi bi-bar-chart me-1 text-bleu"></i>Difficulté
+            </label>
+
+            <div class="row g-2">
+
+              <!-- Facile -->
+              <div class="col-6 col-md-3">
+                <input type="radio"
+                       class="btn-check"
+                       name="difficulty"
+                       id="facile"
+                       value="facile">
+                <label class="btn btn-outline-success w-100 rounded-xl py-3" for="facile">
+                  <div style="font-size:1.5rem;">🌱</div>
+                  <div class="fw-semibold">Facile</div>
+                </label>
+              </div>
+
+              <!-- Moyen -->
+              <div class="col-6 col-md-3">
+                <input type="radio"
+                       class="btn-check"
+                       name="difficulty"
+                       id="moyen"
+                       value="moyen"
+                       checked>
+                <label class="btn btn-outline-warning w-100 rounded-xl py-3" for="moyen">
+                  <div style="font-size:1.5rem;">📖</div>
+                  <div class="fw-semibold">Moyen</div>
+                </label>
+              </div>
+
+              <!-- Difficile -->
+              <div class="col-6 col-md-3">
+                <input type="radio"
+                       class="btn-check"
+                       name="difficulty"
+                       id="difficile"
+                       value="difficile">
+                <label class="btn btn-outline-danger w-100 rounded-xl py-3" for="difficile">
+                  <div style="font-size:1.5rem;">🔥</div>
+                  <div class="fw-semibold">Difficile</div>
+                </label>
+              </div>
+
+              <!-- Expert -->
+              <div class="col-6 col-md-3">
+                <input type="radio"
+                       class="btn-check"
+                       name="difficulty"
+                       id="expert"
+                       value="expert">
+                <label class="btn btn-outline-dark w-100 rounded-xl py-3" for="expert">
+                  <div style="font-size:1.5rem;">💎</div>
+                  <div class="fw-semibold">Expert</div>
+                </label>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Nombre de questions -->
+          <div class="mb-4">
+            <label class="form-label fw-bold fs-6">
+              <i class="bi bi-hash me-1 text-bleu"></i>
+              Nombre de questions :
+              <span id="count-label" class="text-bleu">10</span>
+            </label>
+
+            <input type="range"
+                   name="count"
+                   class="form-range"
+                   min="5"
+                   max="30"
+                   step="5"
+                   value="10"
+                   oninput="document.getElementById('count-label').textContent=this.value">
+
+            <div class="d-flex justify-content-between text-muted small">
+              <span>5</span>
+              <span>10</span>
+              <span>15</span>
+              <span>20</span>
+              <span>25</span>
+              <span>30</span>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-lg w-100 rounded-xl">
+            <i class="bi bi-play-fill me-2"></i>
+            Lancer le quiz
+          </button>
+
+        </form>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

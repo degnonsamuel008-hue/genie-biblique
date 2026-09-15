@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Connexion — Génie Biblique{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-5">
+
+      <div class="card p-4 p-md-5">
+
+        <div class="text-center mb-4">
+          <div style="font-size:3rem;">🔐</div>
+          <h2 class="fw-bold" style="color:var(--bleu-nuit)">Connexion</h2>
+          <p class="text-muted">Content de te revoir !</p>
+        </div>
+
+        {% if error %}
+        <div class="alert alert-danger rounded-xl">
+          <i class="bi bi-exclamation-circle me-2"></i>{{ error }}
+        </div>
+        {% endif %}
+
+        <form method="POST" novalidate>
+          {% csrf_token %}
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">
+              <i class="bi bi-person me-1 text-bleu"></i>Nom d'utilisateur
+            </label>
+            <input type="text" name="username" class="form-control form-control-lg rounded-xl"
+              placeholder="ton_pseudo" autofocus required>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-semibold">
+              <i class="bi bi-lock me-1 text-bleu"></i>Mot de passe
+            </label>
+            <input type="password" name="password" class="form-control form-control-lg rounded-xl"
+              placeholder="••••••••" required>
+              Mot de passe oublié ? <a href="{% url 'password_reset' %}" class="text-bleu fw-semibold">Réinitialiser</a>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-lg w-100 rounded-xl">
+            <i class="bi bi-box-arrow-in-right me-2"></i>Se connecter
+          </button>
+        </form>
+
+        <hr class="my-4">
+        <p class="text-center text-muted mb-0">
+          Pas encore de compte ?
+          <a href="{% url 'register' %}" class="text-bleu fw-semibold">S'inscrire gratuitement</a>
+        </p>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}FAQ | Génie Biblique{% endblock %}
+
+{% block content %}
+<div class="page-header text-center">
+    <h1>Foire Aux Questions</h1>
+    <p>Besoin d'aide ? Trouvez les réponses ici.</p>
+</div>
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="accordion" id="faqAccordion">
+                <div class="accordion-item mb-3">
+                    <h2 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#q1">Comment commencer un quiz ?</button></h2>
+                    <div id="q1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion"><div class="accordion-body">Rendez-vous dans la section "Entraînement" pour choisir une catégorie et lancer votre quiz.</div></div>
+                </div>
+                <div class="accordion-item mb-3">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#q2">L'inscription est-elle gratuite ?</button></h2>
+                    <div id="q2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion"><div class="accordion-body">Oui, Génie Biblique est entièrement gratuit pour tous les utilisateurs.</div></div>
+                </div>
+                <div class="accordion-item mb-3">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#q3">Comment puis-je contacter le support ?</button></h2>
+                    <div id="q3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion"><div class="accordion-body">Utilisez la page " Nous Contacter" accessible en bas de page pour toute question technique ou suggestion.</div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
