@@ -43,3 +43,6 @@ htmlcov/
 
 # ── Node (si tu utilises npm pour du CSS/JS) ──
 node_modules/
+
+biblegame_backup.dump
+data_backup.json
