@@ -15,11 +15,12 @@
     <div class="col-md-7">
 
       <!-- Podium Top 3 -->
-      {% if players|length >= 3 %}
+      {% if players %}
       <div class="d-flex justify-content-center align-items-end gap-3 mb-4" style="height:160px;">
 
         <!-- 2e place -->
         {% with players.1 as p2 %}
+        {% if p2 %}
         <div class="text-center" style="flex:1;">
           <div class="fw-bold small">{{ p2.user.username }}</div>
           <div class="fw-bold text-bleu">{{ p2.score }} pts</div>
@@ -28,6 +29,7 @@
                       display:flex;align-items:center;justify-content:center;
                       color:#fff;font-size:2rem;">🥈</div>
         </div>
+        {% endif %}
         {% endwith %}
 
         <!-- 1re place -->
@@ -44,6 +46,7 @@
 
         <!-- 3e place -->
         {% with players.2 as p3 %}
+        {% if p3 %}
         <div class="text-center" style="flex:1;">
           <div class="fw-bold small">{{ p3.user.username }}</div>
           <div class="fw-bold" style="color:#92400e;">{{ p3.score }} pts</div>
@@ -52,6 +55,7 @@
                       display:flex;align-items:center;justify-content:center;
                       color:#fff;font-size:1.8rem;">🥉</div>
         </div>
+        {% endif %}
         {% endwith %}
 
       </div>

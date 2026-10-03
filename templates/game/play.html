@@ -63,7 +63,9 @@
 {% endblock %}
 
 {% block content %}
-<div oncontextmenu="return false" oncopy="return false">
+<div oncontextmenu="return false" oncopy="return false"
+  data-state-url="{% url 'game_state' game.code %}"
+  data-result-url="{% url 'game_result' game.code %}">
 <div class="container py-3" style="max-width:900px;">
   <div class="row g-4">
 
@@ -128,10 +130,11 @@
       <form method="POST" id="game-form">
         {% csrf_token %}
         <input type="hidden" name="answer"     id="answer-val" value="">
-        <input type="hidden" name="time_taken" id="time-val"   value="0">
+        <input type="hidden" name="question_index" value="{{ question_index }}">
 
         {% for opt in options %}
         <button type="button" class="option-btn"
+          {% if question_closed %}disabled{% endif %}
                 data-val="{{ opt }}" onclick="choisir(this)">
           <span class="option-letter">
             {% if forloop.counter == 1 %}A
@@ -143,6 +146,11 @@
         </button>
         {% endfor %}
       </form>
+      <p id="round-status" class="fw-bold text-center" aria-live="polite">
+        {% if question_closed %}
+          {% if question_winner %}{{ question_winner.user.username }} a gagné cette question.{% else %}Temps écoulé.{% endif %}
+        {% endif %}
+      </p>
 
     </div><!-- /col question -->
 
@@ -152,25 +160,27 @@
         <h6 class="fw-bold mb-3">
           <i class="bi bi-bar-chart-fill text-or me-2"></i>Classement live
         </h6>
-        {% for p in ranking %}
-        <div class="mini-rank {% if p.user == request.user %}me{% endif %}">
-          <span style="font-size:1rem;">
-            {% if forloop.counter == 1 %}🥇
-            {% elif forloop.counter == 2 %}🥈
-            {% elif forloop.counter == 3 %}🥉
-            {% else %}{{ forloop.counter }}{% endif %}
-          </span>
-          <span class="flex-grow-1">{{ p.user.username }}</span>
-          <span class="fw-bold text-bleu">{{ p.score }}</span>
+        <div id="live-ranking">
+          {% for p in ranking %}
+          <div class="mini-rank {% if p.user == request.user %}me{% endif %}">
+            <span style="font-size:1rem;">
+              {% if forloop.counter == 1 %}🥇
+              {% elif forloop.counter == 2 %}🥈
+              {% elif forloop.counter == 3 %}🥉
+              {% else %}{{ forloop.counter }}{% endif %}
+            </span>
+            <span class="flex-grow-1">{{ p.user.username }}</span>
+            <span class="fw-bold text-bleu">{{ p.score }}</span>
+          </div>
+          {% endfor %}
         </div>
-        {% endfor %}
 
         <hr class="my-3">
 
         <!-- Mon score -->
         <div class="text-center">
           <div class="fw-bold text-muted small">Mon score</div>
-          <div class="fw-bold text-bleu fs-4">{{ player.score }} pts</div>
+          <div id="my-score" class="fw-bold text-bleu fs-4">{{ player.score }} pts</div>
         </div>
       </div>
     </div>
@@ -185,9 +195,8 @@
 <script>
   const TMAX    = {{ game.time_per_question }};
   const CIRC    = 2 * Math.PI * 32;
-  let   t       = TMAX;
-  let   choisi  = false;
-  let   start   = Date.now();
+  let   t       = Math.ceil({{ remaining_seconds }});
+  let   choisi  = {{ question_closed|yesno:"true,false" }};
 
   const numEl  = document.getElementById('timer-num');
   const fillEl = document.getElementById('t-fill');
@@ -203,11 +212,9 @@
     else              { fillEl.style.stroke = '#2563eb'; numEl.style.color='#1a2744'; }
 
     if (t <= 0) {
-      clearInterval(interval);
-      document.getElementById('time-val').value = TMAX;
-      document.getElementById('game-form').submit();
+      t = 0;
     }
-    t--;
+    else { t--; }
   }
 
   const interval = setInterval(tick, 1000);
@@ -222,14 +229,59 @@
       b.classList.remove('selected');
     });
     btn.classList.add('selected');
-    btn.disabled = false;
 
     document.getElementById('answer-val').value = btn.dataset.val;
-    document.getElementById('time-val').value   =
-      ((Date.now() - start) / 1000).toFixed(2);
-
-    setTimeout(() => document.getElementById('game-form').submit(), 500);
+    document.getElementById('game-form').submit();
   }
+
+  const gameRoot = document.querySelector('[data-state-url]');
+  const statusEl = document.getElementById('round-status');
+  const rankingEl = document.getElementById('live-ranking');
+  async function refreshGameState() {
+    try {
+      const response = await fetch(gameRoot.dataset.stateUrl, { credentials: 'same-origin' });
+      if (!response.ok) return;
+      const state = await response.json();
+      if (state.status === 'finished') {
+        window.location.assign(gameRoot.dataset.resultUrl);
+        return;
+      }
+      if (state.question_index !== {{ question_index }}) {
+        window.location.reload();
+        return;
+      }
+      if (state.question_closed) {
+        choisi = true;
+        clearInterval(interval);
+        document.querySelectorAll('.option-btn').forEach(button => { button.disabled = true; });
+        statusEl.textContent = state.winner ? `${state.winner} a gagné cette question.` : 'Temps écoulé.';
+      }
+      if (rankingEl) {
+        const rows = state.ranking.map((player, index) => {
+          const rank = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : String(index + 1);
+          const row = document.createElement('div');
+          row.className = `mini-rank${player.username === '{{ request.user.username|escapejs }}' ? ' me' : ''}`;
+          const medal = document.createElement('span');
+          medal.textContent = rank;
+          const name = document.createElement('span');
+          name.className = 'flex-grow-1';
+          name.textContent = player.username;
+          const score = document.createElement('span');
+          score.className = 'fw-bold text-bleu';
+          score.textContent = player.score;
+          row.append(medal, name, score);
+          return row;
+        });
+        rankingEl.replaceChildren(...rows);
+        const currentPlayer = state.ranking.find(player => player.username === '{{ request.user.username|escapejs }}');
+        if (currentPlayer) document.getElementById('my-score').textContent = `${currentPlayer.score} pts`;
+      }
+    } catch (error) {
+      console.error('Impossible de synchroniser la partie.', error);
+    }
+  }
+  setInterval(refreshGameState, 1000);
+  refreshGameState();
 </script>
 <script>
     const threeContainer = document.getElementById('threejs-canvas');

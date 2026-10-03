@@ -19,6 +19,7 @@ class Game(models.Model):
         ('waiting',  'En attente'),
         ('playing',  'En cours'),
         ('finished', 'Terminé'),
+        ('expired',  'Expiré'),
     ]
 
     code               = models.CharField(max_length=6, unique=True, default=generate_code)
@@ -29,6 +30,14 @@ class Game(models.Model):
     book_filter        = models.CharField(max_length=100, blank=True)
     difficulty_filter  = models.CharField(max_length=20, default='all')
     questions_json     = models.TextField(default='[]')
+    question_options_json = models.TextField(default='{}')
+    current_question_index = models.PositiveIntegerField(default=0)
+    question_started_at = models.DateTimeField(null=True, blank=True)
+    question_closed_at = models.DateTimeField(null=True, blank=True)
+    question_winner = models.ForeignKey(
+        'GamePlayer', null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='won_questions',
+    )
     created_at         = models.DateTimeField(auto_now_add=True)
     started_at         = models.DateTimeField(null=True, blank=True)
     finished_at        = models.DateTimeField(null=True, blank=True)

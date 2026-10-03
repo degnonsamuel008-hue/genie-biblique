@@ -11,6 +11,7 @@ import json
 from quiz.models import Question, Score, Book
 from accounts.models import UserProfile, Badge, UserBadge
 from game.models import Game, GamePlayer
+from game.utils import expire_stale_games
 from bible.models import DailyReading, ReadingProgress
 
 
@@ -23,6 +24,7 @@ def is_admin(user):
 
 @user_passes_test(is_admin, login_url='home')
 def dashboard_home(request):
+    expire_stale_games()
     now = timezone.now()
     last_7_days = now - timedelta(days=7)
     last_30_days = now - timedelta(days=30)
@@ -236,6 +238,7 @@ def dashboard_delete_question(request, question_id):
 
 @user_passes_test(is_admin, login_url='home')
 def dashboard_games(request):
+    expire_stale_games()
     status_filter = request.GET.get('status', '')
     games = Game.objects.select_related('organizer').annotate(
         nb_players=Count('players')

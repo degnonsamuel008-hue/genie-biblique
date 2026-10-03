@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib.auth.models import User
+from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.forms import (
     PasswordResetForm, SetPasswordForm, PasswordChangeForm
 )
@@ -11,7 +12,10 @@ from .models import UserProfile, AVATAR_CHOICES
 class RegisterForm(forms.ModelForm):
     password  = forms.CharField(
         widget=forms.PasswordInput(attrs={'placeholder': '••••••••'}),
-        min_length=6,
+        min_length=8,
+        error_messages={
+            'min_length': 'Le mot de passe doit contenir au moins 8 caractères.',
+        },
         label="Mot de passe",
     )
     password_confirm = forms.CharField(
@@ -39,6 +43,11 @@ class RegisterForm(forms.ModelForm):
         if User.objects.filter(username=username).exists():
             raise forms.ValidationError("Ce nom d'utilisateur est déjà pris.")
         return username
+
+    def clean_password(self):
+        password = self.cleaned_data['password']
+        validate_password(password, self.instance)
+        return password
 
     def clean_email(self):
         email = self.cleaned_data.get('email')

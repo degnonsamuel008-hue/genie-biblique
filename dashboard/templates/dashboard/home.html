@@ -6,7 +6,12 @@
 
 <div class="topbar">
   <h1><i class="bi bi-speedometer2 me-2"></i>Tableau de bord</h1>
-  <span class="text-muted small">{{ "now"|date:"d F Y" }}</span>
+  <div class="d-flex align-items-center gap-3">
+    <a href="{% url 'dashboard_games' %}" class="btn btn-outline-primary btn-sm">
+      <i class="bi bi-controller me-1"></i>Gérer les parties
+    </a>
+    <span class="text-muted small">{{ "now"|date:"d F Y" }}</span>
+  </div>
 </div>
 
 <!-- ═══ Cartes statistiques ═══ -->
@@ -217,11 +222,14 @@
           <tbody>
             {% for g in recent_games %}
             <tr>
-              <td class="fw-bold text-primary">{{ g.code }}</td>
+              <td class="fw-bold text-primary">
+                <a href="{% url 'dashboard_games' %}" class="text-decoration-none">{{ g.code }}</a>
+              </td>
               <td>{{ g.organizer.username }}</td>
               <td>
                 {% if g.status == 'waiting' %}<span class="badge-status bg-warning text-dark">En attente</span>
                 {% elif g.status == 'playing' %}<span class="badge-status bg-success text-white">En cours</span>
+                {% elif g.status == 'expired' %}<span class="badge-status bg-danger text-white">Expirée</span>
                 {% else %}<span class="badge-status bg-secondary text-white">Terminée</span>
                 {% endif %}
               </td>

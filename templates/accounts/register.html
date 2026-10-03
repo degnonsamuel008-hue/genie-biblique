@@ -60,7 +60,7 @@
             </label>
             <input type="password" name="password" class="form-control form-control-lg rounded-xl
               {% if form.password.errors %}is-invalid{% endif %}"
-              placeholder="••••••••" required>
+              placeholder="••••••••" minlength="8" required>
             {% for e in form.password.errors %}
               <div class="invalid-feedback">{{ e }}</div>
             {% endfor %}

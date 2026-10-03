@@ -17,6 +17,7 @@
         <option value="waiting" {% if status_filter == 'waiting' %}selected{% endif %}>En attente</option>
         <option value="playing" {% if status_filter == 'playing' %}selected{% endif %}>En cours</option>
         <option value="finished" {% if status_filter == 'finished' %}selected{% endif %}>Terminées</option>
+        <option value="expired" {% if status_filter == 'expired' %}selected{% endif %}>Expirées</option>
       </select>
     </div>
     <div class="col-md-2">
@@ -42,6 +43,7 @@
           <td>
             {% if g.status == 'waiting' %}<span class="badge-status bg-warning text-dark">En attente</span>
             {% elif g.status == 'playing' %}<span class="badge-status bg-success text-white">En cours</span>
+            {% elif g.status == 'expired' %}<span class="badge-status bg-danger text-white">Expirée</span>
             {% else %}<span class="badge-status bg-secondary text-white">Terminée</span>{% endif %}
           </td>
           <td class="text-muted small">{{ g.created_at|date:"d/m/Y H:i" }}</td>

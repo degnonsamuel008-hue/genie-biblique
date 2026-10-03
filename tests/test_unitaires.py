@@ -9,6 +9,8 @@ Lancer avec :
 
 from django.test import TestCase
 from django.contrib.auth.models import User
+from django.utils import timezone
+from datetime import timedelta
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -19,7 +21,7 @@ class TestBookModel(TestCase):
 
     def setUp(self):
         from quiz.models import Book
-        self.book = Book.objects.create(name='Genèse')
+        self.book = Book.objects.create(name='Genèse', testament='AT')
 
     def test_creation_book(self):
         self.assertEqual(self.book.name, 'Genèse')
@@ -31,14 +33,14 @@ class TestBookModel(TestCase):
         from quiz.models import Book
         from django.db import IntegrityError
         with self.assertRaises(IntegrityError):
-            Book.objects.create(name='Genèse')
+            Book.objects.create(name='Genèse', testament='AT')
 
 
 class TestQuestionModel(TestCase):
 
     def setUp(self):
         from quiz.models import Book, Question
-        self.book = Book.objects.create(name='Exode')
+        self.book = Book.objects.create(name='Exode', testament='AT')
         self.question = Question.objects.create(
             book=self.book,
             question="Combien de plaies ont frappé l'Égypte ?",
@@ -230,6 +232,74 @@ class TestGameModel(TestCase):
         self.assertEqual(self.game.player_count, 0)
         GamePlayer.objects.create(game=self.game, user=self.organizer)
         self.assertEqual(self.game.player_count, 1)
+
+
+class TestGameRoundHelpers(TestCase):
+
+    def setUp(self):
+        from game.models import Game
+        from quiz.models import Book, Question
+        self.user = User.objects.create_user(username='round_test', password='pass1234')
+        book = Book.objects.create(name='Psaumes', testament='AT')
+        self.question = Question.objects.create(
+            book=book, question='Question partagée ?',
+            option1='A', option2='B', option3='C', option4='D',
+            correct_answer='A', difficulty='moyen',
+        )
+        self.game = Game.objects.create(
+            organizer=self.user, status='playing', time_per_question=10,
+            questions_json=f'[{self.question.pk}]',
+        )
+
+    def test_ordre_options_est_persistant_pour_la_partie(self):
+        from game.views import _ordered_options
+        from unittest.mock import patch
+
+        with patch('game.views.random.shuffle', side_effect=lambda options: options.reverse()):
+            first_view = _ordered_options(self.game, self.question)
+        self.game.refresh_from_db()
+        with patch('game.views.random.shuffle', side_effect=AssertionError('ordre déjà persisté')):
+            second_view = _ordered_options(self.game, self.question)
+
+        self.assertEqual(first_view, second_view)
+        self.assertEqual(first_view, ['D', 'C', 'B', 'A'])
+
+    def test_manche_se_termine_a_partir_de_l_horloge_serveur(self):
+        from game.views import advance_game_if_due
+
+        started = timezone.now() - timedelta(seconds=11)
+        self.game.question_started_at = started
+        self.game.save(update_fields=['question_started_at'])
+        advance_game_if_due(self.game, now=timezone.now())
+
+        self.game.refresh_from_db()
+        self.assertIsNotNone(self.game.question_closed_at)
+        self.assertEqual(self.game.status, 'playing')
+
+
+class TestWaitingGameExpiry(TestCase):
+
+    def test_expire_seulement_les_parties_en_attente_de_plus_de_24_heures(self):
+        from datetime import timedelta
+        from game.models import Game
+        from game.utils import expire_stale_games
+
+        organizer = User.objects.create_user(username='expiry_admin', password='pass1234')
+        old_waiting = Game.objects.create(organizer=organizer, status='waiting')
+        old_playing = Game.objects.create(organizer=organizer, status='playing')
+        recent_waiting = Game.objects.create(organizer=organizer, status='waiting')
+        cutoff = timezone.now() - timedelta(hours=24, minutes=1)
+        Game.objects.filter(pk__in=[old_waiting.pk, old_playing.pk]).update(created_at=cutoff)
+
+        expired_count = expire_stale_games()
+
+        old_waiting.refresh_from_db()
+        old_playing.refresh_from_db()
+        recent_waiting.refresh_from_db()
+        self.assertEqual(expired_count, 1)
+        self.assertEqual(old_waiting.status, 'expired')
+        self.assertEqual(old_playing.status, 'playing')
+        self.assertEqual(recent_waiting.status, 'waiting')
 
 
 class TestGamePlayer(TestCase):

@@ -39,8 +39,12 @@ class Command(BaseCommand):
         created_count = 0
         existing_count = 0
 
-        for name in LIVRES:
-            book, created = Book.objects.get_or_create(name=name)
+        for index, name in enumerate(LIVRES):
+            testament = 'AT' if index < 39 else 'NT'
+            book, created = Book.objects.get_or_create(
+                name=name,
+                defaults={'testament': testament},
+            )
             if created:
                 created_count += 1
                 self.stdout.write(self.style.SUCCESS(f"  + Créé : {book.name}"))
